@@ -1,0 +1,4776 @@
+[
+  {
+    "id": 1,
+    "district": "大渡口区",
+    "location": "义渡古镇",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 2
+  },
+  {
+    "id": 2,
+    "district": "大渡口区",
+    "location": "马桑溪大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 3
+  },
+  {
+    "id": 3,
+    "district": "大渡口区",
+    "location": "重庆工业博物馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 4
+  },
+  {
+    "id": 4,
+    "district": "大渡口区",
+    "location": "重庆工业遗址公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 5
+  },
+  {
+    "id": 5,
+    "district": "大渡口区",
+    "location": "郭选昌雕塑展馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 6
+  },
+  {
+    "id": 6,
+    "district": "大渡口区",
+    "location": "钓鱼嘴公园",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 7
+  },
+  {
+    "id": 7,
+    "district": "大渡口区",
+    "location": "揽江公园&揽江阁",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 8
+  },
+  {
+    "id": 8,
+    "district": "大渡口区",
+    "location": "白居寺长江大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 9
+  },
+  {
+    "id": 9,
+    "district": "大渡口区",
+    "location": "大滨路、滑石滩",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 10
+  },
+  {
+    "id": 10,
+    "district": "大渡口区",
+    "location": "金鳌山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 11
+  },
+  {
+    "id": 11,
+    "district": "大渡口区",
+    "location": "大渡口森林公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 12
+  },
+  {
+    "id": 12,
+    "district": "大渡口区",
+    "location": "华生园梦幻城堡",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 13
+  },
+  {
+    "id": 13,
+    "district": "大渡口区",
+    "location": "大渡口美德公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 14
+  },
+  {
+    "id": 14,
+    "district": "大渡口区",
+    "location": "重钢工业遗产",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 15
+  },
+  {
+    "id": 15,
+    "district": "九龙坡区",
+    "location": "重庆美术公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 16
+  },
+  {
+    "id": 16,
+    "district": "九龙坡区",
+    "location": "黄桷垭涂鸦街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 17
+  },
+  {
+    "id": 17,
+    "district": "九龙坡区",
+    "location": "四川美术学院黄桷坪校区",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 18
+  },
+  {
+    "id": 18,
+    "district": "九龙坡区",
+    "location": "九龙滩",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 19
+  },
+  {
+    "id": 19,
+    "district": "九龙坡区",
+    "location": "鹅公岩长江大桥",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 20
+  },
+  {
+    "id": 20,
+    "district": "九龙坡区",
+    "location": "重庆建川博物馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 21
+  },
+  {
+    "id": 21,
+    "district": "九龙坡区",
+    "location": "166舰",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 22
+  },
+  {
+    "id": 22,
+    "district": "九龙坡区",
+    "location": "华严寺",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 23
+  },
+  {
+    "id": 23,
+    "district": "九龙坡区",
+    "location": "彩云湖",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "11月秋天去",
+    "sourceRow": 24
+  },
+  {
+    "id": 24,
+    "district": "九龙坡区",
+    "location": "走马古镇",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 25
+  },
+  {
+    "id": 25,
+    "district": "九龙坡区",
+    "location": "铜罐驿老街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 26
+  },
+  {
+    "id": 26,
+    "district": "九龙坡区",
+    "location": "中梁山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 27
+  },
+  {
+    "id": 27,
+    "district": "九龙坡区",
+    "location": "杨家坪步行街",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 28
+  },
+  {
+    "id": 28,
+    "district": "九龙坡区",
+    "location": "万象城",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 29
+  },
+  {
+    "id": 29,
+    "district": "九龙坡区",
+    "location": "动物园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 30
+  },
+  {
+    "id": 30,
+    "district": "九龙坡区",
+    "location": "民主村",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 31
+  },
+  {
+    "id": 31,
+    "district": "九龙坡区",
+    "location": "石坪桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 32
+  },
+  {
+    "id": 32,
+    "district": "九龙坡区",
+    "location": "陈家坪立交",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 33
+  },
+  {
+    "id": 33,
+    "district": "九龙坡区",
+    "location": "石桥铺",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 34
+  },
+  {
+    "id": 34,
+    "district": "九龙坡区",
+    "location": "奥体中心",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 35
+  },
+  {
+    "id": 35,
+    "district": "九龙坡区",
+    "location": "重庆电视塔",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 36
+  },
+  {
+    "id": 36,
+    "district": "九龙坡区",
+    "location": "铁路四村军哥书屋",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 37
+  },
+  {
+    "id": 37,
+    "district": "九龙坡区",
+    "location": "巴国城",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 38
+  },
+  {
+    "id": 38,
+    "district": "北碚区",
+    "location": "缙云山、缙云寺",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 39
+  },
+  {
+    "id": 39,
+    "district": "北碚区",
+    "location": "黛湖",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 40
+  },
+  {
+    "id": 40,
+    "district": "北碚区",
+    "location": "金刚碑",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 41
+  },
+  {
+    "id": 41,
+    "district": "北碚区",
+    "location": "北温泉",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 42
+  },
+  {
+    "id": 42,
+    "district": "北碚区",
+    "location": "张飞古道",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 43
+  },
+  {
+    "id": 43,
+    "district": "北碚区",
+    "location": "偏岩古镇",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 44
+  },
+  {
+    "id": 44,
+    "district": "北碚区",
+    "location": "金刀峡",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 45
+  },
+  {
+    "id": 45,
+    "district": "北碚区",
+    "location": "西南大学",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 46
+  },
+  {
+    "id": 46,
+    "district": "北碚区",
+    "location": "北碚澄江",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 47
+  },
+  {
+    "id": 47,
+    "district": "北碚区",
+    "location": "水土老街",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 48
+  },
+  {
+    "id": 48,
+    "district": "北碚区",
+    "location": "白玉石公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 49
+  },
+  {
+    "id": 49,
+    "district": "北碚区",
+    "location": "八桥叠翠",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 50
+  },
+  {
+    "id": 50,
+    "district": "北碚区",
+    "location": "天府镇",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 51
+  },
+  {
+    "id": 51,
+    "district": "北碚区",
+    "location": "夏坝铁路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 52
+  },
+  {
+    "id": 52,
+    "district": "北碚区",
+    "location": "胜天湖",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 53
+  },
+  {
+    "id": 53,
+    "district": "北碚区",
+    "location": "静观腊梅园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 54
+  },
+  {
+    "id": 54,
+    "district": "北碚区",
+    "location": "东升村",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 55
+  },
+  {
+    "id": 55,
+    "district": "北碚区",
+    "location": "云龟山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 56
+  },
+  {
+    "id": 56,
+    "district": "北碚区",
+    "location": "新艺村",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 57
+  },
+  {
+    "id": 57,
+    "district": "巴南区",
+    "location": "木洞老街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 58
+  },
+  {
+    "id": 58,
+    "district": "巴南区",
+    "location": "丰盛古镇",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 59
+  },
+  {
+    "id": 59,
+    "district": "巴南区",
+    "location": "圣灯山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 60
+  },
+  {
+    "id": 60,
+    "district": "巴南区",
+    "location": "云纂山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 61
+  },
+  {
+    "id": 61,
+    "district": "巴南区",
+    "location": "西流沱小镇",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 62
+  },
+  {
+    "id": 62,
+    "district": "巴南区",
+    "location": "中坝岛",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 63
+  },
+  {
+    "id": 63,
+    "district": "巴南区",
+    "location": "南平坝",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 64
+  },
+  {
+    "id": 64,
+    "district": "巴南区",
+    "location": "天坪山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 65
+  },
+  {
+    "id": 65,
+    "district": "巴南区",
+    "location": "白象山茶园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 66
+  },
+  {
+    "id": 66,
+    "district": "巴南区",
+    "location": "巴滨路湿地公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 67
+  },
+  {
+    "id": 67,
+    "district": "巴南区",
+    "location": "李家沱渡口",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 68
+  },
+  {
+    "id": 68,
+    "district": "巴南区",
+    "location": "梓桐坝",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 69
+  },
+  {
+    "id": 69,
+    "district": "巴南区",
+    "location": "汉海海洋馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 70
+  },
+  {
+    "id": 70,
+    "district": "巴南区",
+    "location": "通江公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 71
+  },
+  {
+    "id": 71,
+    "district": "巴南区",
+    "location": "李家沱长江大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 72
+  },
+  {
+    "id": 72,
+    "district": "巴南区",
+    "location": "白居寺大桥",
+    "priority": "中",
+    "theme": "日落",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 73
+  },
+  {
+    "id": 73,
+    "district": "巴南区",
+    "location": "鱼洞大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 74
+  },
+  {
+    "id": 74,
+    "district": "巴南区",
+    "location": "华熙LIVE",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 75
+  },
+  {
+    "id": 75,
+    "district": "巴南区",
+    "location": "云林天乡",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 76
+  },
+  {
+    "id": 76,
+    "district": "巴南区",
+    "location": "天星寺",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 77
+  },
+  {
+    "id": 77,
+    "district": "巴南区",
+    "location": "南彭多彩植物园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 78
+  },
+  {
+    "id": 78,
+    "district": "南岸区",
+    "location": "一棵树",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "延时视频",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 79
+  },
+  {
+    "id": 79,
+    "district": "南岸区",
+    "location": "一棵树",
+    "priority": "低",
+    "theme": "夜景",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 80
+  },
+  {
+    "id": 80,
+    "district": "南岸区",
+    "location": "大金鹰",
+    "priority": "高",
+    "theme": "日落",
+    "methods": [
+      "延时视频",
+      "无人机航拍"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 81
+  },
+  {
+    "id": 81,
+    "district": "南岸区",
+    "location": "大金鹰",
+    "priority": "高",
+    "theme": "日出",
+    "methods": [
+      "延时视频"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "缺日出扫光",
+    "sourceRow": 82
+  },
+  {
+    "id": 82,
+    "district": "南岸区",
+    "location": "大金鹰",
+    "priority": "高",
+    "theme": "夜景",
+    "methods": [
+      "延时视频"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 83
+  },
+  {
+    "id": 83,
+    "district": "南岸区",
+    "location": "龙门浩老街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 84
+  },
+  {
+    "id": 84,
+    "district": "南岸区",
+    "location": "下浩里",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 85
+  },
+  {
+    "id": 85,
+    "district": "南岸区",
+    "location": "弹子石",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 86
+  },
+  {
+    "id": 86,
+    "district": "南岸区",
+    "location": "长嘉汇",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 87
+  },
+  {
+    "id": 87,
+    "district": "南岸区",
+    "location": "东水门",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 88
+  },
+  {
+    "id": 88,
+    "district": "南岸区",
+    "location": "长江索道",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 89
+  },
+  {
+    "id": 89,
+    "district": "南岸区",
+    "location": "植物园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 90
+  },
+  {
+    "id": 90,
+    "district": "南岸区",
+    "location": "抗战遗址",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 91
+  },
+  {
+    "id": 91,
+    "district": "南岸区",
+    "location": "黄桷垭老街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 92
+  },
+  {
+    "id": 92,
+    "district": "南岸区",
+    "location": "广阳岛",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 93
+  },
+  {
+    "id": 93,
+    "district": "南岸区",
+    "location": "铜元局",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 94
+  },
+  {
+    "id": 94,
+    "district": "南岸区",
+    "location": "慈云寺",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 95
+  },
+  {
+    "id": 95,
+    "district": "南岸区",
+    "location": "钟楼广场",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 96
+  },
+  {
+    "id": 96,
+    "district": "南岸区",
+    "location": "海棠烟雨公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 97
+  },
+  {
+    "id": 97,
+    "district": "南岸区",
+    "location": "水师兵营",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 98
+  },
+  {
+    "id": 98,
+    "district": "南岸区",
+    "location": "千佛寺",
+    "priority": "中",
+    "theme": "日出",
+    "methods": [
+      "延时视频"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "缺航拍画面",
+    "sourceRow": 99
+  },
+  {
+    "id": 99,
+    "district": "南岸区",
+    "location": "千佛寺",
+    "priority": "高",
+    "theme": "夜景",
+    "methods": [
+      "无人机航拍"
+    ],
+    "media": [
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "缺地面延时",
+    "sourceRow": 100
+  },
+  {
+    "id": 100,
+    "district": "南岸区",
+    "location": "开埠遗址",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 101
+  },
+  {
+    "id": 101,
+    "district": "南岸区",
+    "location": "菜园坝",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 102
+  },
+  {
+    "id": 102,
+    "district": "南岸区",
+    "location": "苏家坝",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 103
+  },
+  {
+    "id": 103,
+    "district": "南岸区",
+    "location": "懒鱼时光",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 104
+  },
+  {
+    "id": 104,
+    "district": "南岸区",
+    "location": "大金鹰",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 105
+  },
+  {
+    "id": 105,
+    "district": "南岸区",
+    "location": "喜来登",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 106
+  },
+  {
+    "id": 106,
+    "district": "南岸区",
+    "location": "清水溪公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 107
+  },
+  {
+    "id": 107,
+    "district": "南岸区",
+    "location": "1891",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 108
+  },
+  {
+    "id": 108,
+    "district": "南岸区",
+    "location": "江山一号",
+    "priority": "低",
+    "theme": "日出",
+    "methods": [
+      "延时视频",
+      "无人机航拍",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 109
+  },
+  {
+    "id": 109,
+    "district": "南岸区",
+    "location": "江山一号",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "延时视频",
+      "接片",
+      "无人机航拍"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 110
+  },
+  {
+    "id": 110,
+    "district": "南岸区",
+    "location": "江山一号",
+    "priority": "低",
+    "theme": "夜景",
+    "methods": [
+      "延时视频",
+      "接片",
+      "无人机航拍"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 111
+  },
+  {
+    "id": 111,
+    "district": "南岸区",
+    "location": "江山天下",
+    "priority": "低",
+    "theme": "日出",
+    "methods": [
+      "延时视频",
+      "无人机航拍",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 112
+  },
+  {
+    "id": 112,
+    "district": "南岸区",
+    "location": "江山天下",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "无人机航拍",
+      "延时视频",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 113
+  },
+  {
+    "id": 113,
+    "district": "南岸区",
+    "location": "江山天下",
+    "priority": "低",
+    "theme": "夜景",
+    "methods": [
+      "延时视频",
+      "无人机航拍",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 114
+  },
+  {
+    "id": 114,
+    "district": "南岸区",
+    "location": "社会主义学院",
+    "priority": "低",
+    "theme": "日出",
+    "methods": [
+      "延时视频",
+      "接片",
+      "无人机航拍"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 115
+  },
+  {
+    "id": 115,
+    "district": "南岸区",
+    "location": "社会主义学院",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "延时视频",
+      "无人机航拍",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "目前机位不对外，无法补拍",
+    "sourceRow": 116
+  },
+  {
+    "id": 116,
+    "district": "南岸区",
+    "location": "社会主义学院",
+    "priority": "低",
+    "theme": "夜景",
+    "methods": [
+      "无人机航拍",
+      "Pocket视频",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "目前机位不对外，无法补拍",
+    "sourceRow": 117
+  },
+  {
+    "id": 117,
+    "district": "南岸区",
+    "location": "朝天门大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 118
+  },
+  {
+    "id": 118,
+    "district": "南岸区",
+    "location": "阳光100",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 119
+  },
+  {
+    "id": 119,
+    "district": "南岸区",
+    "location": "城上天幕",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "无人机航拍",
+      "延时视频",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "日出时不开放，可用1891代替",
+    "sourceRow": 120
+  },
+  {
+    "id": 120,
+    "district": "南岸区",
+    "location": "城上天幕",
+    "priority": "低",
+    "theme": "夜景",
+    "methods": [
+      "无人机航拍",
+      "延时视频",
+      "接片"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 121
+  },
+  {
+    "id": 121,
+    "district": "南岸区",
+    "location": "山雀",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 122
+  },
+  {
+    "id": 122,
+    "district": "南岸区",
+    "location": "工贸",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 123
+  },
+  {
+    "id": 123,
+    "district": "南岸区",
+    "location": "海棠溪",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 124
+  },
+  {
+    "id": 124,
+    "district": "南岸区",
+    "location": "融汇",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 125
+  },
+  {
+    "id": 125,
+    "district": "南岸区",
+    "location": "重庆邮电大学",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 126
+  },
+  {
+    "id": 126,
+    "district": "南岸区",
+    "location": "长江国际",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 127
+  },
+  {
+    "id": 127,
+    "district": "南岸区",
+    "location": "鲸鱼岛唱片",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 128
+  },
+  {
+    "id": 128,
+    "district": "南岸区",
+    "location": "游艇广场",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 129
+  },
+  {
+    "id": 129,
+    "district": "南岸区",
+    "location": "国际马戏城",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 130
+  },
+  {
+    "id": 130,
+    "district": "南岸区",
+    "location": "规划展览馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 131
+  },
+  {
+    "id": 131,
+    "district": "南岸区",
+    "location": "故宫南迁博物馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 132
+  },
+  {
+    "id": 132,
+    "district": "南岸区",
+    "location": "朝天门",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 133
+  },
+  {
+    "id": 133,
+    "district": "南岸区",
+    "location": "盘龙立交",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 134
+  },
+  {
+    "id": 134,
+    "district": "南岸区",
+    "location": "老君洞",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 135
+  },
+  {
+    "id": 135,
+    "district": "南岸区",
+    "location": "涂山寺",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 136
+  },
+  {
+    "id": 136,
+    "district": "南岸区",
+    "location": "益华里",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 137
+  },
+  {
+    "id": 137,
+    "district": "南岸区",
+    "location": "重庆东站",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 138
+  },
+  {
+    "id": 138,
+    "district": "南岸区",
+    "location": "涂山雕塑公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 139
+  },
+  {
+    "id": 139,
+    "district": "南岸区",
+    "location": "老君洞",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 140
+  },
+  {
+    "id": 140,
+    "district": "南岸区",
+    "location": "黄桷古道",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 141
+  },
+  {
+    "id": 141,
+    "district": "南岸区",
+    "location": "重庆国际会展中心",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 142
+  },
+  {
+    "id": 142,
+    "district": "渝中区",
+    "location": "解放碑CBD",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 143
+  },
+  {
+    "id": 143,
+    "district": "渝中区",
+    "location": "洪崖洞",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 144
+  },
+  {
+    "id": 144,
+    "district": "渝中区",
+    "location": "朝天门",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 145
+  },
+  {
+    "id": 145,
+    "district": "渝中区",
+    "location": "来福士",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 146
+  },
+  {
+    "id": 146,
+    "district": "渝中区",
+    "location": "十八梯",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 147
+  },
+  {
+    "id": 147,
+    "district": "渝中区",
+    "location": "山城巷",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 148
+  },
+  {
+    "id": 148,
+    "district": "渝中区",
+    "location": "湖广会馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 149
+  },
+  {
+    "id": 149,
+    "district": "渝中区",
+    "location": "白象居",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 150
+  },
+  {
+    "id": 150,
+    "district": "渝中区",
+    "location": "戴家巷",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 151
+  },
+  {
+    "id": 151,
+    "district": "渝中区",
+    "location": "鹅岭公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 152
+  },
+  {
+    "id": 152,
+    "district": "渝中区",
+    "location": "鹅岭二厂",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 153
+  },
+  {
+    "id": 153,
+    "district": "渝中区",
+    "location": "李子坝",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 154
+  },
+  {
+    "id": 154,
+    "district": "渝中区",
+    "location": "大礼堂",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 155
+  },
+  {
+    "id": 155,
+    "district": "渝中区",
+    "location": "三峡博物馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 156
+  },
+  {
+    "id": 156,
+    "district": "渝中区",
+    "location": "时代天街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 157
+  },
+  {
+    "id": 157,
+    "district": "渝中区",
+    "location": "得意世界",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 158
+  },
+  {
+    "id": 158,
+    "district": "渝中区",
+    "location": "鲁祖庙",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 159
+  },
+  {
+    "id": 159,
+    "district": "渝中区",
+    "location": "寸滩长江大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 160
+  },
+  {
+    "id": 160,
+    "district": "渝中区",
+    "location": "千厮门",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 161
+  },
+  {
+    "id": 161,
+    "district": "渝中区",
+    "location": "白象街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 162
+  },
+  {
+    "id": 162,
+    "district": "渝中区",
+    "location": "山城步道",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 163
+  },
+  {
+    "id": 163,
+    "district": "渝中区",
+    "location": "枇杷山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 164
+  },
+  {
+    "id": 164,
+    "district": "渝中区",
+    "location": "皇冠大扶梯",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 165
+  },
+  {
+    "id": 165,
+    "district": "渝中区",
+    "location": "重庆菜园坝",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 166
+  },
+  {
+    "id": 166,
+    "district": "渝中区",
+    "location": "中四路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 167
+  },
+  {
+    "id": 167,
+    "district": "渝中区",
+    "location": "黄花园",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 168
+  },
+  {
+    "id": 168,
+    "district": "渝中区",
+    "location": "红岩村大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 169
+  },
+  {
+    "id": 169,
+    "district": "渝中区",
+    "location": "虎头岩",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 170
+  },
+  {
+    "id": 170,
+    "district": "渝中区",
+    "location": "李子坝",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 171
+  },
+  {
+    "id": 171,
+    "district": "渝中区",
+    "location": "三峡博物馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 172
+  },
+  {
+    "id": 172,
+    "district": "渝中区",
+    "location": "三层马路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 173
+  },
+  {
+    "id": 173,
+    "district": "渝中区",
+    "location": "两路口",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 174
+  },
+  {
+    "id": 174,
+    "district": "渝中区",
+    "location": "临华路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 175
+  },
+  {
+    "id": 175,
+    "district": "渝中区",
+    "location": "关岳庙",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 176
+  },
+  {
+    "id": 176,
+    "district": "渝中区",
+    "location": "嘉华大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 177
+  },
+  {
+    "id": 177,
+    "district": "渝中区",
+    "location": "大坪",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 178
+  },
+  {
+    "id": 178,
+    "district": "渝中区",
+    "location": "大溪沟",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 179
+  },
+  {
+    "id": 179,
+    "district": "渝中区",
+    "location": "曾家岩大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 180
+  },
+  {
+    "id": 180,
+    "district": "渝中区",
+    "location": "渝澳大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 181
+  },
+  {
+    "id": 181,
+    "district": "渝中区",
+    "location": "牛角沱",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 182
+  },
+  {
+    "id": 182,
+    "district": "渝中区",
+    "location": "珊瑚坝",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 183
+  },
+  {
+    "id": 183,
+    "district": "渝中区",
+    "location": "袁家岗",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 184
+  },
+  {
+    "id": 184,
+    "district": "渝中区",
+    "location": "长江大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 185
+  },
+  {
+    "id": 185,
+    "district": "渝中区",
+    "location": "陆海国际",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "无人机航拍",
+      "延时视频"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "缺日出画面",
+    "sourceRow": 186
+  },
+  {
+    "id": 186,
+    "district": "渝中区",
+    "location": "陆海国际",
+    "priority": "低",
+    "theme": "夜景",
+    "methods": [
+      "无人机航拍",
+      "延时视频"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "缺地面视频（佛图关）",
+    "sourceRow": 187
+  },
+  {
+    "id": 187,
+    "district": "渝中区",
+    "location": "湖广会馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 188
+  },
+  {
+    "id": 188,
+    "district": "渝中区",
+    "location": "凯旋路电梯",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 189
+  },
+  {
+    "id": 189,
+    "district": "渝中区",
+    "location": "浮图关公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 190
+  },
+  {
+    "id": 190,
+    "district": "渝中区",
+    "location": "化龙桥重庆天地",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 191
+  },
+  {
+    "id": 191,
+    "district": "渝中区",
+    "location": "红岩村",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 192
+  },
+  {
+    "id": 192,
+    "district": "渝中区",
+    "location": "时代天街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 193
+  },
+  {
+    "id": 193,
+    "district": "渝中区",
+    "location": "鲁祖庙",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 194
+  },
+  {
+    "id": 194,
+    "district": "渝中区",
+    "location": "马鞍山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 195
+  },
+  {
+    "id": 195,
+    "district": "两江新区",
+    "location": "江北嘴CBD",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 196
+  },
+  {
+    "id": 196,
+    "district": "两江新区",
+    "location": "大剧院",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 197
+  },
+  {
+    "id": 197,
+    "district": "两江新区",
+    "location": "鸿恩寺",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 198
+  },
+  {
+    "id": 198,
+    "district": "两江新区",
+    "location": "观音桥商圈",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 199
+  },
+  {
+    "id": 199,
+    "district": "两江新区",
+    "location": "铁山坪",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 200
+  },
+  {
+    "id": 200,
+    "district": "两江新区",
+    "location": "中央公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 201
+  },
+  {
+    "id": 201,
+    "district": "两江新区",
+    "location": "园博园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 202
+  },
+  {
+    "id": 202,
+    "district": "两江新区",
+    "location": "照母山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 203
+  },
+  {
+    "id": 203,
+    "district": "两江新区",
+    "location": "礼嘉智慧公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 204
+  },
+  {
+    "id": 204,
+    "district": "两江新区",
+    "location": "九曲河湿地公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 205
+  },
+  {
+    "id": 205,
+    "district": "两江新区",
+    "location": "九街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 206
+  },
+  {
+    "id": 206,
+    "district": "两江新区",
+    "location": "光电园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 207
+  },
+  {
+    "id": 207,
+    "district": "两江新区",
+    "location": "北城天街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 208
+  },
+  {
+    "id": 208,
+    "district": "两江新区",
+    "location": "北滨路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 209
+  },
+  {
+    "id": 209,
+    "district": "两江新区",
+    "location": "双龙",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 210
+  },
+  {
+    "id": 210,
+    "district": "两江新区",
+    "location": "同茂隧道",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 211
+  },
+  {
+    "id": 211,
+    "district": "两江新区",
+    "location": "周家山",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 212
+  },
+  {
+    "id": 212,
+    "district": "两江新区",
+    "location": "唐家沱",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 213
+  },
+  {
+    "id": 213,
+    "district": "两江新区",
+    "location": "唐家院子",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 214
+  },
+  {
+    "id": 214,
+    "district": "两江新区",
+    "location": "四宫村",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 215
+  },
+  {
+    "id": 215,
+    "district": "两江新区",
+    "location": "复盛",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 216
+  },
+  {
+    "id": 216,
+    "district": "两江新区",
+    "location": "大湾公交站",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 217
+  },
+  {
+    "id": 217,
+    "district": "两江新区",
+    "location": "宝桐路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 218
+  },
+  {
+    "id": 218,
+    "district": "两江新区",
+    "location": "山顶见",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 219
+  },
+  {
+    "id": 219,
+    "district": "两江新区",
+    "location": "康庄",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 220
+  },
+  {
+    "id": 220,
+    "district": "两江新区",
+    "location": "御龙天峰",
+    "priority": "中",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 221
+  },
+  {
+    "id": 221,
+    "district": "两江新区",
+    "location": "欢乐谷",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 222
+  },
+  {
+    "id": 222,
+    "district": "两江新区",
+    "location": "紫薇路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 223
+  },
+  {
+    "id": 223,
+    "district": "两江新区",
+    "location": "翔安二路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 224
+  },
+  {
+    "id": 224,
+    "district": "两江新区",
+    "location": "蔡家",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 225
+  },
+  {
+    "id": 225,
+    "district": "两江新区",
+    "location": "龙健路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 226
+  },
+  {
+    "id": 226,
+    "district": "两江新区",
+    "location": "国博中心",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 227
+  },
+  {
+    "id": 227,
+    "district": "两江新区",
+    "location": "龙兴古镇",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 228
+  },
+  {
+    "id": 228,
+    "district": "两江新区",
+    "location": "大佛寺",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 229
+  },
+  {
+    "id": 229,
+    "district": "两江新区",
+    "location": "燕子矶",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "极高",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 230
+  },
+  {
+    "id": 230,
+    "district": "两江新区",
+    "location": "江北机场",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 231
+  },
+  {
+    "id": 231,
+    "district": "两江新区",
+    "location": "龙兴足球场",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 232
+  },
+  {
+    "id": 232,
+    "district": "两江新区",
+    "location": "金海湾滨江公园",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "无人机航拍"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 233
+  },
+  {
+    "id": 233,
+    "district": "两江新区",
+    "location": "仙桃数据谷",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 234
+  },
+  {
+    "id": 234,
+    "district": "两江新区",
+    "location": "寸滩国际新城",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 235
+  },
+  {
+    "id": 235,
+    "district": "两江新区",
+    "location": "果园港",
+    "priority": "高",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 236
+  },
+  {
+    "id": 236,
+    "district": "两江新区",
+    "location": "鸿恩寺",
+    "priority": "中",
+    "theme": "日落",
+    "methods": [
+      "延时视频"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "缺无人机画面",
+    "sourceRow": 237
+  },
+  {
+    "id": 237,
+    "district": "两江新区",
+    "location": "鸿恩寺",
+    "priority": "低",
+    "theme": "日出",
+    "methods": [
+      "延时视频"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 238
+  },
+  {
+    "id": 238,
+    "district": "两江新区",
+    "location": "鸿恩寺",
+    "priority": "高",
+    "theme": "夜景",
+    "methods": [
+      "延时视频"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "缺无人机画面",
+    "sourceRow": 239
+  },
+  {
+    "id": 239,
+    "district": "两江新区",
+    "location": "北仓文创",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 240
+  },
+  {
+    "id": 240,
+    "district": "两江新区",
+    "location": "金山意库",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 241
+  },
+  {
+    "id": 241,
+    "district": "两江新区",
+    "location": "两江影视城",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 242
+  },
+  {
+    "id": 242,
+    "district": "两江新区",
+    "location": "碧津公园",
+    "priority": "高",
+    "theme": "雨天",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 243
+  },
+  {
+    "id": 243,
+    "district": "两江新区",
+    "location": "晚晴园",
+    "priority": "高",
+    "theme": "雨天",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 244
+  },
+  {
+    "id": 244,
+    "district": "两江新区",
+    "location": "龙头寺公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 245
+  },
+  {
+    "id": 245,
+    "district": "沙坪坝区",
+    "location": "松江村",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 246
+  },
+  {
+    "id": 246,
+    "district": "沙坪坝区",
+    "location": "游艺楼",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 247
+  },
+  {
+    "id": 247,
+    "district": "沙坪坝区",
+    "location": "苏式楼",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 248
+  },
+  {
+    "id": 248,
+    "district": "沙坪坝区",
+    "location": "川美",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 249
+  },
+  {
+    "id": 249,
+    "district": "沙坪坝区",
+    "location": "山喜营地",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 250
+  },
+  {
+    "id": 250,
+    "district": "沙坪坝区",
+    "location": "双碑",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 251
+  },
+  {
+    "id": 251,
+    "district": "沙坪坝区",
+    "location": "堆金村",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 252
+  },
+  {
+    "id": 252,
+    "district": "沙坪坝区",
+    "location": "歌乐山",
+    "priority": "低",
+    "theme": "日出",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "高",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 253
+  },
+  {
+    "id": 253,
+    "district": "沙坪坝区",
+    "location": "歌乐山",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "高",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 254
+  },
+  {
+    "id": 254,
+    "district": "沙坪坝区",
+    "location": "歌乐山",
+    "priority": "低",
+    "theme": "夜景",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "高",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 255
+  },
+  {
+    "id": 255,
+    "district": "沙坪坝区",
+    "location": "磁器口",
+    "priority": "低",
+    "theme": "雨天",
+    "methods": [
+      "相机地面拍摄"
+    ],
+    "media": [
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "待补拍",
+    "note": "",
+    "sourceRow": 256
+  },
+  {
+    "id": 256,
+    "district": "沙坪坝区",
+    "location": "红岩村大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 257
+  },
+  {
+    "id": 257,
+    "district": "沙坪坝区",
+    "location": "西车辆段",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "相机地面拍摄",
+      "Pocket视频"
+    ],
+    "media": [
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 258
+  },
+  {
+    "id": 258,
+    "district": "沙坪坝区",
+    "location": "金沙天街",
+    "priority": "中",
+    "theme": "夜景",
+    "methods": [
+      "相机地面拍摄",
+      "Pocket视频"
+    ],
+    "media": [
+      "照片",
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 259
+  },
+  {
+    "id": 259,
+    "district": "沙坪坝区",
+    "location": "陈电村",
+    "priority": "低",
+    "theme": "日落",
+    "methods": [
+      "相机地面拍摄",
+      "Pocket视频"
+    ],
+    "media": [
+      "视频"
+    ],
+    "clarity": "低",
+    "status": "已毕业",
+    "note": "",
+    "sourceRow": 260
+  },
+  {
+    "id": 260,
+    "district": "沙坪坝区",
+    "location": "白公馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 261
+  },
+  {
+    "id": 261,
+    "district": "沙坪坝区",
+    "location": "烈士墓",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 262
+  },
+  {
+    "id": 262,
+    "district": "沙坪坝区",
+    "location": "三峡广场",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 263
+  },
+  {
+    "id": 263,
+    "district": "沙坪坝区",
+    "location": "重庆大学",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 264
+  },
+  {
+    "id": 264,
+    "district": "沙坪坝区",
+    "location": "大学城",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 265
+  },
+  {
+    "id": 265,
+    "district": "沙坪坝区",
+    "location": "赛力斯智慧工厂",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 266
+  },
+  {
+    "id": 266,
+    "district": "沙坪坝区",
+    "location": "1949大剧院",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 267
+  },
+  {
+    "id": 267,
+    "district": "沙坪坝区",
+    "location": "宝轮寺",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 268
+  },
+  {
+    "id": 268,
+    "district": "沙坪坝区",
+    "location": "熙街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 269
+  },
+  {
+    "id": 269,
+    "district": "沙坪坝区",
+    "location": "重庆图书馆",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 270
+  },
+  {
+    "id": 270,
+    "district": "沙坪坝区",
+    "location": "沙滨路",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 271
+  },
+  {
+    "id": 271,
+    "district": "沙坪坝区",
+    "location": "平顶山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 272
+  },
+  {
+    "id": 272,
+    "district": "沙坪坝区",
+    "location": "融创文旅城",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 273
+  },
+  {
+    "id": 273,
+    "district": "沙坪坝区",
+    "location": "石井坡",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 274
+  },
+  {
+    "id": 274,
+    "district": "沙坪坝区",
+    "location": "沙磁巷",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 275
+  },
+  {
+    "id": 275,
+    "district": "沙坪坝区",
+    "location": "陈家桥老街",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 276
+  },
+  {
+    "id": 276,
+    "district": "沙坪坝区",
+    "location": "中梁山",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 277
+  },
+  {
+    "id": 277,
+    "district": "沙坪坝区",
+    "location": "海石公园",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 278
+  },
+  {
+    "id": 278,
+    "district": "沙坪坝区",
+    "location": "双碑大桥",
+    "priority": "低",
+    "theme": "常规记录",
+    "methods": [
+      "待规划"
+    ],
+    "media": [
+      "待规划"
+    ],
+    "clarity": "低",
+    "status": "未拍摄",
+    "note": "",
+    "sourceRow": 279
+  }
+]
