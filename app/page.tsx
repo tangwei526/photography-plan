@@ -1,131 +1,93 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as XLSX from "xlsx";
 import sourceData from "./spots.json";
 
 type Status = "未拍摄" | "待补拍" | "已毕业";
 type Priority = "低" | "中" | "高";
+type View = "library" | "map" | "calendar" | "coverage";
+type Station = { id: string; name: string; description: string };
+type Sample = { id: string; name: string; url: string };
 type Task = {
-  id: number; district: string; location: string; priority: Priority; theme: string;
-  methods: string[]; media: string[]; clarity: string; status: Status; note: string; sourceRow: number;
+  id:number; district:string; location:string; priority:Priority; theme:string; methods:string[]; media:string[];
+  clarity:string; status:Status; note:string; sourceRow:number; longitude?:number; latitude?:number;
+  scheduleDate?:string; scheduleSlot?:string; stations?:Station[]; samples?:Sample[]; retakeReason?:string;
+  missingShots?:string; graduationCriteria?:string;
 };
-type LocationGroup = { key: string; district: string; location: string; tasks: Task[]; priority: Priority; status: Status };
+type WeatherDay = { date:string; sunrise:string; sunset:string; cloud:number; visibility:number; code:number };
+type RouteInfo = { distance:number; duration:number; geometry:[number,number][] };
 
-const baseTasks = sourceData as unknown as Task[];
-const priorityRank: Record<Priority, number> = { 高: 3, 中: 2, 低: 1 };
-const nextStatus: Record<Status, Status> = { 未拍摄: "待补拍", 待补拍: "已毕业", 已毕业: "未拍摄" };
+const districtCenters:Record<string,[number,number]> = {
+  渝中区:[106.555,29.557], 江北区:[106.574,29.606], 南岸区:[106.620,29.522], 沙坪坝区:[106.455,29.555],
+  九龙坡区:[106.505,29.503], 大渡口区:[106.482,29.476], 渝北区:[106.630,29.718], 巴南区:[106.540,29.402]
+};
+const priorityRank:Record<Priority,number>={高:3,中:2,低:1};
+const statuses:Status[]=["未拍摄","待补拍","已毕业"];
+const baseTasks=(sourceData as unknown as Task[]).map(t=>({...t,stations:[],samples:[],graduationCriteria:""}));
+const split=(v:unknown)=>String(v||"").split(/[，,、;；]/).map(x=>x.trim()).filter(Boolean);
+const n=(v:unknown)=>{const x=Number(v);return Number.isFinite(x)?x:undefined};
+const coord=(t:Task):[number,number]=>{
+  if(t.latitude&&t.longitude)return[t.latitude,t.longitude];
+  const c=districtCenters[t.district]||[29.563,106.551]; let h=0; for(const ch of t.location)h=(h*31+ch.charCodeAt(0))|0;
+  return [c[1]+((h%19)-9)/1800,c[0]+(((h>>4)%19)-9)/1800];
+};
+const group=(tasks:Task[])=>[...new Map(tasks.map(t=>[`${t.district}::${t.location}`,0])).keys()].map(key=>{
+  const items=tasks.filter(t=>`${t.district}::${t.location}`===key);
+  const state:Status=items.every(x=>x.status==="已毕业")?"已毕业":items.some(x=>x.status==="待补拍")?"待补拍":"未拍摄";
+  return {key,district:items[0].district,location:items[0].location,tasks:items,status:state,priority:[...items].sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority])[0].priority};
+});
 
-function groupTasks(tasks: Task[]): LocationGroup[] {
-  const map = new Map<string, Task[]>();
-  for (const task of tasks) {
-    const key = `${task.district}::${task.location}`;
-    map.set(key, [...(map.get(key) || []), task]);
-  }
-  return [...map.entries()].map(([key, items]) => {
-    const status: Status = items.every(x => x.status === "已毕业") ? "已毕业" : items.some(x => x.status === "待补拍") ? "待补拍" : "未拍摄";
-    const priority = [...items].sort((a,b) => priorityRank[b.priority] - priorityRank[a.priority])[0].priority;
-    return { key, district: items[0].district, location: items[0].location, tasks: items, priority, status };
-  });
+function MapCanvas({tasks,route,onPick}:{tasks:Task[];route:RouteInfo|null;onPick:(t:Task)=>void}){
+  const el=useRef<HTMLDivElement>(null); const map=useRef<any>(null); const layers=useRef<any>(null); const leaflet=useRef<any>(null); const [ready,setReady]=useState(false);
+  useEffect(()=>{let active=true;(async()=>{if(!el.current||map.current)return;const mod=await import("leaflet");const lib=mod.default;if(!active||!el.current)return;leaflet.current=lib;map.current=lib.map(el.current,{zoomControl:true}).setView([29.563,106.551],11);lib.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:'© OpenStreetMap'}).addTo(map.current);layers.current=lib.layerGroup().addTo(map.current);setReady(true)})();return()=>{active=false;map.current?.remove();map.current=null}},[]);
+  useEffect(()=>{const L=leaflet.current;if(!ready||!L||!map.current||!layers.current)return;layers.current.clearLayers();const bounds:[number,number][]=[];tasks.forEach(t=>{const p=coord(t);bounds.push(p);const color=t.status==="已毕业"?"#3e7b61":t.status==="待补拍"?"#d99434":"#e86632";L.circleMarker(p,{radius:7,color:"#fff",weight:2,fillColor:color,fillOpacity:1}).bindTooltip(`${t.location} · ${t.theme}`).on("click",()=>onPick(t)).addTo(layers.current)});if(route?.geometry.length){const line=L.polyline(route.geometry,{color:"#e86632",weight:4,opacity:.85}).addTo(layers.current);map.current.fitBounds(line.getBounds(),{padding:[35,35]})}else if(bounds.length)map.current.fitBounds(L.latLngBounds(bounds),{padding:[30,30],maxZoom:13})},[tasks,route,onPick,ready]);
+  return <div ref={el} className="realMap"/>;
 }
 
-export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>(baseTasks);
-  const [district, setDistrict] = useState("全部行政区");
-  const [status, setStatus] = useState("全部状态");
-  const [priority, setPriority] = useState("全部优先级");
-  const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+export default function Home(){
+  const [tasks,setTasks]=useState<Task[]>(baseTasks); const [hydrated,setHydrated]=useState(false); const [view,setView]=useState<View>("library");
+  const [district,setDistrict]=useState("全部行政区"); const [status,setStatus]=useState("全部状态"); const [priority,setPriority]=useState("全部优先级"); const [query,setQuery]=useState("");
+  const [expanded,setExpanded]=useState<string|null>(null); const [editing,setEditing]=useState<number|null>(null); const [mapTask,setMapTask]=useState<number|null>(null);
+  const [routeIds,setRouteIds]=useState<number[]>([]); const [route,setRoute]=useState<RouteInfo|null>(null); const [routeLoading,setRouteLoading]=useState(false);
+  const [weather,setWeather]=useState<WeatherDay[]>([]); const [weatherLoading,setWeatherLoading]=useState(false); const [month,setMonth]=useState(()=>new Date().toISOString().slice(0,7));
+  const inputRef=useRef<HTMLInputElement>(null);
+  useEffect(()=>{const saved=localStorage.getItem("shancheng-photo-tasks-v2")||localStorage.getItem("shancheng-photo-tasks-v1");if(saved)try{setTasks(JSON.parse(saved))}catch{}setHydrated(true)},[]);
+  useEffect(()=>{if(hydrated)localStorage.setItem("shancheng-photo-tasks-v2",JSON.stringify(tasks))},[tasks,hydrated]);
+  const groups=useMemo(()=>group(tasks),[tasks]); const districts=useMemo(()=>[...new Set(tasks.map(t=>t.district))],[tasks]);
+  const filtered=useMemo(()=>groups.filter(g=>(district==="全部行政区"||g.district===district)&&(status==="全部状态"||g.status===status)&&(priority==="全部优先级"||g.priority===priority)&&`${g.location} ${g.district} ${g.tasks.map(t=>`${t.theme} ${t.methods} ${t.note}`).join(" ")}`.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]),[groups,district,status,priority,query]);
+  const counts={unshot:tasks.filter(t=>t.status==="未拍摄").length,redo:tasks.filter(t=>t.status==="待补拍").length,done:tasks.filter(t=>t.status==="已毕业").length};
+  const selected=tasks.find(t=>t.id===(editing??mapTask)); const mappedTasks=tasks.filter(t=>coord(t));
+  const update=(id:number,patch:Partial<Task>)=>setTasks(x=>x.map(t=>t.id===id?{...t,...patch}:t));
 
-  useEffect(() => {
-    const saved = localStorage.getItem("shancheng-photo-tasks-v1");
-    if (saved) { try { setTasks(JSON.parse(saved)); } catch { /* ignore invalid local data */ } }
-    setHydrated(true);
-  }, []);
-  useEffect(() => { if (hydrated) localStorage.setItem("shancheng-photo-tasks-v1", JSON.stringify(tasks)); }, [tasks, hydrated]);
-
-  const allGroups = useMemo(() => groupTasks(tasks), [tasks]);
-  const districts = useMemo(() => [...new Set(tasks.map(t => t.district))], [tasks]);
-  const filtered = useMemo(() => allGroups.filter(g => {
-    const haystack = `${g.location} ${g.district} ${g.tasks.map(t => `${t.theme} ${t.methods.join(" ")} ${t.note}`).join(" ")}`.toLowerCase();
-    return (district === "全部行政区" || g.district === district)
-      && (status === "全部状态" || g.status === status)
-      && (priority === "全部优先级" || g.priority === priority)
-      && haystack.includes(query.toLowerCase());
-  }).sort((a,b) => priorityRank[b.priority] - priorityRank[a.priority]), [allGroups, district, status, priority, query]);
-
-  const counts = { unshot: tasks.filter(t => t.status === "未拍摄").length, redo: tasks.filter(t => t.status === "待补拍").length, done: tasks.filter(t => t.status === "已毕业").length };
-  const completion = Math.round(counts.done / tasks.length * 100);
-
-  function updateTask(id: number, patch: Partial<Task>) { setTasks(current => current.map(t => t.id === id ? { ...t, ...patch } : t)); }
-  function cycleTask(id: number) { const task = tasks.find(t => t.id === id); if (task) updateTask(id, { status: nextStatus[task.status] }); }
-  function resetData() { if (window.confirm("恢复 Excel 原始数据？本机上的状态修改将被清除。")) setTasks(baseTasks); }
-  function addLocation(form: FormData) {
-    const location = String(form.get("location") || "").trim(); if (!location) return;
-    const maxId = Math.max(...tasks.map(t => t.id), 0);
-    setTasks(current => [{ id: maxId + 1, district: String(form.get("district")), location, priority: String(form.get("priority")) as Priority, theme: String(form.get("theme") || "常规记录"), methods: ["待规划"], media: ["待规划"], clarity: String(form.get("clarity")), status: "未拍摄", note: String(form.get("note") || ""), sourceRow: 0 }, ...current]);
-    setShowForm(false);
+  async function importExcel(file:File){
+    const wb=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true}); const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json<Record<string,unknown>>(ws,{defval:""}); let lastDistrict="",lastLocation="";
+    const imported=rows.map((r,i)=>{lastDistrict=String(r["行政区域"]||lastDistrict).trim();lastLocation=String(r["点位名称"]||lastLocation).trim();const station=String(r["机位名称"]||"").trim();return {id:i+1,district:lastDistrict||"待分类",location:lastLocation||`未命名点位 ${i+1}`,priority:(["高","中","低"].includes(String(r["优先级"]))?String(r["优先级"]):"低") as Priority,theme:String(r["拍摄主题"]||"常规记录"),methods:split(r["拍摄方式"]||"待规划"),media:split(r["素材类型"]||"待规划"),clarity:String(r["通透度要求"]||"低"),status:(statuses.includes(String(r["拍摄状态"]) as Status)?String(r["拍摄状态"]):"未拍摄") as Status,note:String(r["备注"]||""),sourceRow:i+2,longitude:n(r["经度"]),latitude:n(r["纬度"]),scheduleDate:r["计划日期"] instanceof Date?(r["计划日期"] as Date).toISOString().slice(0,10):String(r["计划日期"]||""),scheduleSlot:String(r["计划时段"]||""),stations:station?[{id:`s-${i}`,name:station,description:String(r["机位说明"]||"")}]:[],samples:String(r["样片链接"]||"").trim()?[{id:`p-${i}`,name:"Excel 样片",url:String(r["样片链接"])}]:[],retakeReason:String(r["补拍原因"]||""),missingShots:String(r["缺失镜头"]||""),graduationCriteria:String(r["毕业标准"]||"")};}).filter(t=>t.location);
+    if(imported.length&&confirm(`识别到 ${imported.length} 条任务，替换当前数据吗？`)){setTasks(imported);setView("library");}
   }
+  function exportExcel(){const rows=tasks.map(t=>({行政区域:t.district,点位名称:t.location,优先级:t.priority,拍摄主题:t.theme,拍摄方式:t.methods.join("、"),素材类型:t.media.join("、"),通透度要求:t.clarity,拍摄状态:t.status,经度:t.longitude||"",纬度:t.latitude||"",计划日期:t.scheduleDate||"",计划时段:t.scheduleSlot||"",机位名称:(t.stations||[]).map(s=>s.name).join("、"),机位说明:(t.stations||[]).map(s=>s.description).join("；"),补拍原因:t.retakeReason||"",缺失镜头:t.missingShots||"",毕业标准:t.graduationCriteria||"",样片链接:(t.samples||[]).map(s=>s.url.startsWith("data:")?"本地样片":s.url).join("、"),备注:t.note}));const ws=XLSX.utils.json_to_sheet(rows);ws["!cols"]=Object.keys(rows[0]||{}).map((_,i)=>({wch:[12,24,8,14,20,14,11,11,12,12,13,14,20,26,24,24,28,24,24][i]}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"点位数据");XLSX.writeFile(wb,`重庆拍摄点位_${new Date().toISOString().slice(0,10)}.xlsx`)}
+  async function loadWeather(t:Task){setMapTask(t.id);setWeatherLoading(true);const [lat,lon]=coord(t);try{const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,visibility,weather_code&daily=sunrise,sunset&timezone=Asia%2FShanghai&forecast_days=7`;const d=await fetch(url).then(r=>r.json());setWeather(d.daily.time.map((date:string,i:number)=>{const idx=d.hourly.time.map((x:string)=>x.slice(0,10)).reduce((a:string[],x:string,j:number)=>x===date?[...a,j]:a,[]);return{date,sunrise:d.daily.sunrise[i].slice(11,16),sunset:d.daily.sunset[i].slice(11,16),cloud:Math.round(idx.reduce((s:number,j:number)=>s+d.hourly.cloud_cover[j],0)/(idx.length||1)),visibility:Math.round(Math.max(...idx.map((j:number)=>d.hourly.visibility[j]))/1000),code:d.hourly.weather_code[idx[12]||idx[0]]}}))}catch{setWeather([])}finally{setWeatherLoading(false)}}
+  async function planRoute(){const pts=routeIds.map(id=>tasks.find(t=>t.id===id)).filter(Boolean) as Task[];if(pts.length<2)return;setRouteLoading(true);try{const cs=pts.map(t=>{const [a,b]=coord(t);return`${b},${a}`}).join(";");const d=await fetch(`https://router.project-osrm.org/route/v1/driving/${cs}?overview=full&geometries=geojson`).then(r=>r.json());const rr=d.routes?.[0];setRoute(rr?{distance:rr.distance,duration:rr.duration,geometry:rr.geometry.coordinates.map((p:[number,number])=>[p[1],p[0]])}:null)}catch{setRoute(null)}finally{setRouteLoading(false)}}
+  function addStation(id:number){const t=tasks.find(x=>x.id===id);if(!t)return;update(id,{stations:[...(t.stations||[]),{id:crypto.randomUUID(),name:`机位 ${(t.stations?.length||0)+1}`,description:"待勘景"}]})}
+  async function addSamples(id:number,files:FileList|null){if(!files)return;const t=tasks.find(x=>x.id===id);if(!t)return;const accepted=[...files].filter(f=>f.size<=1200000).slice(0,6-(t.samples?.length||0));const samples=await Promise.all(accepted.map(f=>new Promise<Sample>(resolve=>{const r=new FileReader();r.onload=()=>resolve({id:crypto.randomUUID(),name:f.name,url:String(r.result)});r.readAsDataURL(f)})));update(id,{samples:[...(t.samples||[]),...samples]})}
+  const nav=[{id:"library",label:"点位库"},{id:"map",label:"地图天气"},{id:"calendar",label:"拍摄日历"},{id:"coverage",label:"覆盖分析"}] as const;
 
-  return <main>
-    <header className="topbar">
-      <div className="brand"><span className="brandMark">焦</span><span>山城取景簿</span></div>
-      <nav><button className="navActive">点位库</button><button>拍摄任务</button><button>进度分析</button></nav>
-      <div className="headerActions"><button className="textButton" onClick={resetData}>恢复原始数据</button><div className="avatar">TW</div><div className="profile">Tang Wei<small>重庆摄影计划</small></div></div>
-    </header>
+  return <main><header className="topbar"><div className="brand"><span className="brandMark">焦</span><span>山城取景簿</span></div><nav>{nav.map(x=><button key={x.id} className={view===x.id?"navActive":""} onClick={()=>setView(x.id)}>{x.label}</button>)}</nav><div className="headerActions"><button className="soft" onClick={()=>inputRef.current?.click()}>导入 Excel</button><a className="soft" href="/摄影点位导入模板.xlsx" download>下载模板</a><button className="dark" onClick={exportExcel}>导出修改</button><input ref={inputRef} hidden type="file" accept=".xlsx,.xls" onChange={e=>e.target.files?.[0]&&importExcel(e.target.files[0])}/></div></header>
+  <div className="shell"><section className="intro"><div><p className="eyebrow">CHONGQING PHOTO ATLAS · WORKSPACE</p><h1>{view==="library"?"把重庆，拍得更完整。":view==="map"?"先看天，再出发。":view==="calendar"?"把好天气留给重要机位。":"每一个空白，都有下一次出发。"}</h1><p>共 {groups.length} 个点位、{tasks.length} 条主题任务；修改自动保存在当前设备。</p></div><button className="primary" onClick={()=>{const id=Math.max(0,...tasks.map(t=>t.id))+1;setTasks([{id,district:districts[0]||"渝中区",location:"新拍摄点位",priority:"中",theme:"常规记录",methods:["待规划"],media:["照片"],clarity:"中",status:"未拍摄",note:"",sourceRow:0,stations:[],samples:[]},...tasks]);setEditing(id);setView("library")}}>＋ 新建点位</button></section>
+  <section className="stats"><article><span className="statIcon orange">⌖</span><div><small>独立点位</small><strong>{groups.length}<i>个</i></strong><em>覆盖 {districts.length} 个区域</em></div></article><article><span className="statIcon blue">◷</span><div><small>未拍摄任务</small><strong>{counts.unshot}<i>条</i></strong><em>优先安排高优任务</em></div></article><article><span className="statIcon amber">↻</span><div><small>待补拍 / 已毕业</small><strong>{counts.redo}<i> / {counts.done}</i></strong><em>可追踪缺失镜头</em></div></article><article><span className="statIcon green">◉</span><div><small>已安排日程</small><strong>{tasks.filter(t=>t.scheduleDate).length}<i>条</i></strong><em>{tasks.filter(t=>t.longitude&&t.latitude).length} 条含精确坐标</em></div></article></section>
 
-    <div className="shell">
-      <section className="intro">
-        <div><p className="eyebrow">CHONGQING PHOTO ATLAS · 2026</p><h1>把重庆，拍得更完整。</h1><p>已从 Excel 导入 {allGroups.length} 个点位、{tasks.length} 条主题任务，所有修改自动保存在本机。</p></div>
-        <button className="primary" onClick={() => setShowForm(true)}><b>＋</b> 新建拍摄点位</button>
-      </section>
+  {view==="library"&&<section className="workspace"><aside><div className="asideTitle"><span>行政区域</span><small>{districts.length} 个</small></div>{["全部行政区",...districts].map(d=><button key={d} className={district===d?"district active":"district"} onClick={()=>setDistrict(d)}><span>{d}</span><b>{d==="全部行政区"?groups.length:groups.filter(g=>g.district===d).length}</b></button>)}<div className="dataHealth"><span>工具提示</span><small>点击主题任务右侧“管理”，可设置坐标、计划、机位、样片、补拍原因和毕业标准。</small></div></aside><div className="content"><div className="toolbar"><label className="search">⌕<input placeholder="搜索点位、主题、方式或备注…" value={query} onChange={e=>setQuery(e.target.value)}/></label><div className="filters"><select value={status} onChange={e=>setStatus(e.target.value)}><option>全部状态</option>{statuses.map(x=><option key={x}>{x}</option>)}</select><select value={priority} onChange={e=>setPriority(e.target.value)}><option>全部优先级</option><option>高</option><option>中</option><option>低</option></select></div></div><div className="listHead"><span>显示 {filtered.length} 个点位</span><small>按优先级排序 · 点击展开主题任务</small></div><div className="spotList">{filtered.map(g=><article className={`locationCard ${expanded===g.key?"open":""}`} key={g.key}><button className="locationSummary" onClick={()=>setExpanded(expanded===g.key?null:g.key)}><span className={`priorityBadge priority-${g.priority}`}>{g.priority}</span><div className="locationName"><div><h3>{g.location}</h3><span>{g.district}</span></div><p>{g.tasks.map(t=>t.theme).join(" · ")}</p></div><div className="taskProgress"><small>主题毕业</small><strong>{g.tasks.filter(t=>t.status==="已毕业").length}/{g.tasks.length}</strong><div><i style={{width:`${g.tasks.filter(t=>t.status==="已毕业").length/g.tasks.length*100}%`}}/></div></div><span className={`status status-${g.status}`}>{g.status}</span><span className="chevron">⌄</span></button>{expanded===g.key&&<div className="taskPanel">{g.tasks.map(t=><div className="taskRow" key={t.id}><div className="themeCell"><small>拍摄主题</small><strong>{t.theme}</strong><p className="micro">{t.scheduleDate?`计划 ${t.scheduleDate} ${t.scheduleSlot||""}`:"尚未排期"}</p></div><div><small>拍摄方式</small><div className="tags">{t.methods.map(x=><span key={x}>{x}</span>)}</div></div><div><small>机位 / 素材</small><div className="tags"><span>{t.stations?.length||0} 个机位</span><span>{t.samples?.length||0} 张样片</span><span>通透度 {t.clarity}</span></div></div><div className="taskStatus"><button className={`status status-${t.status}`} onClick={()=>update(t.id,{status:statuses[(statuses.indexOf(t.status)+1)%3]})}>{t.status} ↻</button><button className="manage" onClick={()=>setEditing(t.id)}>管理 →</button></div></div>)}</div>}</article>)}</div></div></section>}
 
-      <section className="stats">
-        <article><span className="statIcon orange">⌖</span><div><small>独立点位</small><strong>{allGroups.length}<i>个</i></strong><em>覆盖 {districts.length} 个区域</em></div></article>
-        <article><span className="statIcon blue">◷</span><div><small>未拍摄任务</small><strong>{counts.unshot}<i>条</i></strong><em>{Math.round(counts.unshot/tasks.length*100)}% 尚未开始</em></div></article>
-        <article><span className="statIcon amber">↻</span><div><small>待补拍 / 已毕业</small><strong>{counts.redo}<i> / {counts.done}</i></strong><em>任务级状态统计</em></div></article>
-        <article className="progressCard"><div><small>任务完成度</small><strong>{completion}<i>%</i></strong></div><div className="ring" style={{"--p": `${completion * 3.6}deg`} as React.CSSProperties}><span>{completion}%</span></div><em>已毕业 {counts.done} / {tasks.length} 条</em></article>
-      </section>
+  {view==="map"&&<section className="mapWorkspace"><div className="mapMain"><MapCanvas tasks={mappedTasks} route={route} onPick={loadWeather}/><div className="mapLegend"><span><i className="dot unshot"/>未拍摄</span><span><i className="dot redo"/>待补拍</span><span><i className="dot done"/>已毕业</span><small>无精确坐标时按行政区中心近似展示</small></div></div><aside className="mapSide"><h2>拍摄路线</h2><p className="sub">选择 2–8 个主题任务，按选择顺序规划驾车路线。</p><div className="routePicker">{tasks.slice(0,80).map(t=><label key={t.id}><input type="checkbox" checked={routeIds.includes(t.id)} disabled={!routeIds.includes(t.id)&&routeIds.length>=8} onChange={e=>setRouteIds(x=>e.target.checked?[...x,t.id]:x.filter(id=>id!==t.id))}/><span>{t.location}</span><small>{t.theme}</small></label>)}</div><button className="primary full" onClick={planRoute} disabled={routeIds.length<2||routeLoading}>{routeLoading?"正在规划…":`规划 ${routeIds.length} 个点位`}</button>{route&&<div className="routeResult"><strong>{(route.distance/1000).toFixed(1)} km</strong><span>预计驾车 {Math.round(route.duration/60)} 分钟</span></div>}<hr/><h2>天气窗口</h2>{selected?<><div className="weatherPlace"><strong>{selected.location}</strong><button onClick={()=>setEditing(selected.id)}>编辑坐标</button></div>{weatherLoading?<p className="loading">读取天气中…</p>:weather.length?<div className="weatherDays">{weather.map(w=><article key={w.date}><div><strong>{w.date.slice(5)}</strong><small>云量 {w.cloud}% · 能见度 {w.visibility}km</small></div><span>↑ {w.sunrise}<br/>↓ {w.sunset}</span></article>)}</div>:<p className="sub">点击地图上的点位查看 7 日天气。</p>}</>:<p className="sub">点击地图标记，查看云量、能见度与日出日落窗口。</p>}</aside></section>}
 
-      <section className="workspace">
-        <aside>
-          <div className="asideTitle"><span>行政区域</span><small>{districts.length} 个</small></div>
-          {["全部行政区", ...districts].map(d => <button key={d} className={district === d ? "district active" : "district"} onClick={() => setDistrict(d)}><span>{d}</span><b>{d === "全部行政区" ? allGroups.length : allGroups.filter(g => g.district === d).length}</b></button>)}
-          <div className="dataHealth"><span>数据完整度</span><div><i style={{width:`${Math.round(tasks.filter(t=>t.theme!=="常规记录").length/tasks.length*100)}%`}} /></div><small>38 条已填写拍摄主题<br/>27 条已规划拍摄方式</small></div>
-        </aside>
-
-        <div className="content">
-          <div className="toolbar">
-            <label className="search">⌕<input aria-label="搜索点位" placeholder="搜索点位、主题、方式或备注…" value={query} onChange={e => setQuery(e.target.value)} /></label>
-            <div className="filters"><select aria-label="筛选状态" value={status} onChange={e => setStatus(e.target.value)}><option>全部状态</option><option>未拍摄</option><option>待补拍</option><option>已毕业</option></select><select aria-label="筛选优先级" value={priority} onChange={e => setPriority(e.target.value)}><option>全部优先级</option><option>高</option><option>中</option><option>低</option></select></div>
-          </div>
-          <div className="listHead"><span>显示 {filtered.length} 个点位</span><small>按优先级排序 · 点击展开任务</small></div>
-          <div className="spotList">
-            {filtered.map(group => {
-              const isOpen = expanded === group.key;
-              const done = group.tasks.filter(t => t.status === "已毕业").length;
-              return <article className={`locationCard ${isOpen ? "open" : ""}`} key={group.key}>
-                <button className="locationSummary" onClick={() => setExpanded(isOpen ? null : group.key)} aria-expanded={isOpen}>
-                  <span className={`priorityBadge priority-${group.priority}`}>{group.priority}</span>
-                  <div className="locationName"><div><h3>{group.location}</h3><span>{group.district}</span></div><p>{group.tasks.length === 1 && group.tasks[0].theme === "常规记录" ? "拍摄主题待规划" : group.tasks.map(t => t.theme).join(" · ")}</p></div>
-                  <div className="taskProgress"><small>主题任务</small><strong>{done}/{group.tasks.length}</strong><div><i style={{width:`${done/group.tasks.length*100}%`}} /></div></div>
-                  <span className={`status status-${group.status}`}>{group.status}</span><span className="chevron">⌄</span>
-                </button>
-                {isOpen && <div className="taskPanel">{group.tasks.map(task => <div className="taskRow" key={task.id}>
-                  <div className="themeCell"><small>拍摄主题</small><strong>{task.theme}</strong>{task.note && <p className="note">备注：{task.note}</p>}</div>
-                  <div><small>拍摄方式</small><div className="tags">{task.methods.map(x => <span key={x}>{x}</span>)}</div></div>
-                  <div><small>素材 / 通透度</small><div className="tags">{task.media.map(x => <span key={x}>▣ {x}</span>)}<span>通透度 {task.clarity}</span></div></div>
-                  <div className="taskStatus"><button className={`status status-${task.status}`} onClick={() => cycleTask(task.id)}>{task.status} ↻</button><small>Excel 第 {task.sourceRow || "新增"} 行</small></div>
-                </div>)}</div>}
-              </article>;
-            })}
-          </div>
-          {filtered.length === 0 && <div className="empty">没有找到匹配点位，换个筛选条件试试。</div>}
-        </div>
-      </section>
-    </div>
-
-    {showForm && <div className="modal" role="dialog" aria-modal="true"><form action={addLocation}><div className="modalHead"><div><small>NEW LOCATION</small><h2>添加拍摄点位</h2></div><button type="button" onClick={() => setShowForm(false)}>×</button></div><label>点位名称<input name="location" placeholder="例如：鹅岭公园瞰胜楼" autoFocus required /></label><div className="formGrid"><label>行政区域<select name="district">{districts.map(d=><option key={d}>{d}</option>)}</select></label><label>优先级<select name="priority"><option>高</option><option>中</option><option>低</option></select></label></div><div className="formGrid"><label>拍摄主题<input name="theme" placeholder="日出 / 日落 / 夜景" /></label><label>通透度<select name="clarity"><option>低</option><option>中</option><option>高</option><option>极高</option></select></label></div><label>备注<textarea name="note" placeholder="补拍要求、机位限制或季节建议" /></label><div className="modalActions"><button type="button" onClick={() => setShowForm(false)}>取消</button><button className="primary" type="submit">保存点位</button></div></form></div>}
-  </main>;
+  {view==="calendar"&&<Calendar month={month} setMonth={setMonth} tasks={tasks} onEdit={setEditing}/>} 
+  {view==="coverage"&&<Coverage tasks={tasks}/>} 
+  </div>{editing!==null&&selected&&<Editor task={selected} update={p=>update(selected.id,p)} close={()=>setEditing(null)} addStation={()=>addStation(selected.id)} addSamples={f=>addSamples(selected.id,f)}/>}</main>
 }
+
+function Calendar({month,setMonth,tasks,onEdit}:{month:string;setMonth:(m:string)=>void;tasks:Task[];onEdit:(id:number)=>void}){const [y,m]=month.split("-").map(Number);const days=new Date(y,m,0).getDate();const offset=(new Date(y,m-1,1).getDay()+6)%7;const cells=Array.from({length:offset+days},(_,i)=>i<offset?0:i-offset+1);function move(x:number){const d=new Date(y,m-1+x,1);setMonth(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`)}return <section className="calendarPanel"><div className="calendarHead"><div><p className="eyebrow">SHOOTING SCHEDULE</p><h2>{y} 年 {m} 月</h2></div><div><button onClick={()=>move(-1)}>← 上月</button><button onClick={()=>setMonth(new Date().toISOString().slice(0,7))}>本月</button><button onClick={()=>move(1)}>下月 →</button></div></div><div className="week">{["周一","周二","周三","周四","周五","周六","周日"].map(x=><b key={x}>{x}</b>)}</div><div className="calendarGrid">{cells.map((d,i)=>{const date=d?`${month}-${String(d).padStart(2,"0")}`:"";const items=tasks.filter(t=>t.scheduleDate===date);return <div className={`day ${!d?"blank":""}`} key={i}>{d>0&&<span>{d}</span>}{items.slice(0,4).map(t=><button key={t.id} className={`event priority-${t.priority}`} onClick={()=>onEdit(t.id)}><b>{t.location}</b><small>{t.scheduleSlot||t.theme}</small></button>)}{items.length>4&&<small className="more">另有 {items.length-4} 项</small>}</div>})}</div></section>}
+
+function Coverage({tasks}:{tasks:Task[]}){const districts=[...new Set(tasks.map(t=>t.district))].map(name=>{const g=group(tasks.filter(t=>t.district===name));return{name,total:g.length,done:g.filter(x=>x.status==="已毕业").length}});const themes=[...new Set(tasks.map(t=>t.theme))].map(name=>{const a=tasks.filter(t=>t.theme===name);return{name,total:a.length,done:a.filter(t=>t.status==="已毕业").length}}).sort((a,b)=>b.total-a.total);return <section className="coverage"><div className="coverageIntro"><p className="eyebrow">COVERAGE REPORT</p><h2>区域与主题覆盖率</h2><p>区域按“点位下所有主题均毕业”计算；主题按任务毕业数计算。</p></div><div className="coverageGrid"><article><h3>行政区域覆盖</h3>{districts.map(x=><Bar key={x.name} {...x}/>)}</article><article><h3>拍摄主题覆盖</h3>{themes.slice(0,14).map(x=><Bar key={x.name} {...x}/>)}</article></div><article className="gapList"><h3>下一批优先补齐</h3><div>{tasks.filter(t=>t.status!=="已毕业").sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]).slice(0,12).map(t=><span key={t.id}><b>{t.location}</b>{t.theme} · {t.status}</span>)}</div></article></section>}
+function Bar({name,total,done}:{name:string;total:number;done:number}){const p=Math.round(done/(total||1)*100);return <div className="barRow"><div><span>{name}</span><b>{p}%</b></div><div className="bar"><i style={{width:`${p}%`}}/></div><small>{done} / {total}</small></div>}
+
+function Editor({task,update,close,addStation,addSamples}:{task:Task;update:(p:Partial<Task>)=>void;close:()=>void;addStation:()=>void;addSamples:(f:FileList|null)=>void}){return <div className="modal editorModal"><div className="editor"><div className="modalHead"><div><small>TASK WORKBENCH</small><h2>{task.location}</h2><p>{task.district} · {task.theme}</p></div><button onClick={close}>×</button></div><div className="editGrid"><label>点位名称<input value={task.location} onChange={e=>update({location:e.target.value})}/></label><label>拍摄主题<input value={task.theme} onChange={e=>update({theme:e.target.value})}/></label><label>经度<input type="number" step="0.000001" value={task.longitude||""} placeholder="106.551" onChange={e=>update({longitude:n(e.target.value)})}/></label><label>纬度<input type="number" step="0.000001" value={task.latitude||""} placeholder="29.563" onChange={e=>update({latitude:n(e.target.value)})}/></label><label>计划日期<input type="date" value={task.scheduleDate||""} onChange={e=>update({scheduleDate:e.target.value})}/></label><label>计划时段<input value={task.scheduleSlot||""} placeholder="17:30-20:00" onChange={e=>update({scheduleSlot:e.target.value})}/></label><label>状态<select value={task.status} onChange={e=>update({status:e.target.value as Status})}>{statuses.map(x=><option key={x}>{x}</option>)}</select></label><label>优先级<select value={task.priority} onChange={e=>update({priority:e.target.value as Priority})}><option>高</option><option>中</option><option>低</option></select></label></div><label>补拍原因<textarea value={task.retakeReason||""} placeholder="为什么需要补拍？" onChange={e=>update({retakeReason:e.target.value})}/></label><label>缺失镜头<textarea value={task.missingShots||""} placeholder="广角全景、人物关系、蓝调延时……" onChange={e=>update({missingShots:e.target.value})}/></label><label>毕业标准<textarea value={task.graduationCriteria||""} placeholder="满足哪些画面、天气与技术条件才算完成？" onChange={e=>update({graduationCriteria:e.target.value})}/></label><div className="sectionTitle"><h3>多机位</h3><button onClick={addStation}>＋ 添加机位</button></div><div className="stationList">{(task.stations||[]).map((s,i)=><div key={s.id}><input value={s.name} onChange={e=>update({stations:task.stations!.map((x,j)=>j===i?{...x,name:e.target.value}:x)})}/><input value={s.description} placeholder="机位方向、限制、焦段建议" onChange={e=>update({stations:task.stations!.map((x,j)=>j===i?{...x,description:e.target.value}:x)})}/><button onClick={()=>update({stations:task.stations!.filter(x=>x.id!==s.id)})}>移除</button></div>)}{!task.stations?.length&&<p className="sub">还没有机位，先添加一个勘景机位。</p>}</div><div className="sectionTitle"><h3>样片管理</h3><label className="upload">＋ 上传样片<input hidden type="file" accept="image/*" multiple onChange={e=>addSamples(e.target.files)}/></label></div><div className="samples">{(task.samples||[]).map(s=><figure key={s.id}><img src={s.url} alt={s.name}/><figcaption>{s.name}</figcaption><button onClick={()=>update({samples:task.samples!.filter(x=>x.id!==s.id)})}>×</button></figure>)}</div><div className="modalActions"><button className="primary" onClick={close}>完成</button></div></div></div>}
