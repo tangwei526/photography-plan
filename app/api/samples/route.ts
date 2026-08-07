@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 
 type SampleMeta = {
-  taskId: string; district: string; location: string; theme: string;
+  taskId: string; district: string; location: string; theme: string; themeCategory: string;
   stationId: string; stationName: string; stationDescription: string;
   subjectDescription: string; note: string; originalName: string;
 };
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
   const id = `${crypto.randomUUID()}.${ext || "jpg"}`;
   const meta: SampleMeta = {
     taskId: clean(form.get("taskId"), 40), district: clean(form.get("district"), 60), location: clean(form.get("location"), 160),
-    theme: clean(form.get("theme"), 100), stationId: clean(form.get("stationId"), 80), stationName: clean(form.get("stationName"), 160),
+    theme: clean(form.get("theme"), 100), themeCategory: clean(form.get("themeCategory"), 40), stationId: clean(form.get("stationId"), 80), stationName: clean(form.get("stationName"), 160),
     stationDescription: clean(form.get("stationDescription"), 500), subjectDescription: "", note: clean(form.get("note"), 500), originalName: file.name.slice(0, 200),
   };
   await bucket().put(`samples/${id}`, file.stream(), { httpMetadata: { contentType: file.type }, customMetadata: meta });
@@ -83,6 +83,7 @@ export async function PATCH(request: Request) {
     ...(object.customMetadata || {}),
     originalName: cleanText(body.originalName, 200),
     location: cleanText(body.location, 160),
+    themeCategory: cleanText(body.themeCategory, 40),
     stationName: cleanText(body.stationName, 160),
     stationDescription: cleanText(body.stationDescription, 500),
     subjectDescription: cleanText(body.subjectDescription, 500),
