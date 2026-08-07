@@ -8,6 +8,16 @@ type SampleMeta = {
 
 const bucket = () => (env as unknown as { SAMPLES: R2Bucket }).SAMPLES;
 const clean = (value: FormDataEntryValue | null, max = 500) => String(value || "").slice(0, max);
+const allowedOrigin = "https://tangwei526.github.io";
+const cors = (request: Request) => ({ "access-control-allow-origin": request.headers.get("origin") === allowedOrigin ? allowedOrigin : "", "access-control-allow-methods": "GET,POST,DELETE,OPTIONS", "access-control-allow-headers": "content-type,x-admin-key", "vary": "origin" });
+const secured = (request: Request) => {
+  const configured = (env as unknown as { SAMPLE_ADMIN_KEY?: string }).SAMPLE_ADMIN_KEY;
+  return Boolean(configured && request.headers.get("x-admin-key") === configured);
+};
+
+export async function OPTIONS(request: Request) {
+  return new Response(null, { status: 204, headers: cors(request) });
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -19,6 +29,7 @@ export async function GET(request: Request) {
     object.writeHttpMetadata(headers);
     headers.set("etag", object.httpEtag);
     headers.set("cache-control", "private, max-age=31536000, immutable");
+    Object.entries(cors(request)).forEach(([key,value]) => value && headers.set(key,value));
     return new Response(object.body, { headers });
   }
 
@@ -34,13 +45,14 @@ export async function GET(request: Request) {
     const id = object.key.slice("samples/".length);
     return { id, url: `/api/samples?id=${encodeURIComponent(id)}`, uploadedAt: object.uploaded.toISOString(), size: object.size, ...(object.customMetadata || {}) };
   });
-  return Response.json({ items });
+  return Response.json({ items }, { headers: cors(request) });
 }
 
 export async function POST(request: Request) {
+  if (!secured(request)) return Response.json({ error: "需要管理密钥" }, { status: 401, headers: cors(request) });
   const form = await request.formData();
   const file = form.get("file");
-  if (!(file instanceof File) || !file.type.startsWith("image/")) return Response.json({ error: "请选择图片文件" }, { status: 400 });
+  if (!(file instanceof File) || !file.type.startsWith("image/")) return Response.json({ error: "请选择图片文件" }, { status: 400, headers: cors(request) });
   if (file.size > 20 * 1024 * 1024) return Response.json({ error: "单张图片不能超过 20MB" }, { status: 400 });
   const ext = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8);
   const id = `${crypto.randomUUID()}.${ext || "jpg"}`;
@@ -50,12 +62,13 @@ export async function POST(request: Request) {
     stationDescription: clean(form.get("stationDescription"), 500), note: clean(form.get("note"), 500), originalName: file.name.slice(0, 200),
   };
   await bucket().put(`samples/${id}`, file.stream(), { httpMetadata: { contentType: file.type }, customMetadata: meta });
-  return Response.json({ item: { id, url: `/api/samples?id=${encodeURIComponent(id)}`, uploadedAt: new Date().toISOString(), size: file.size, ...meta } });
+  return Response.json({ item: { id, url: `/api/samples?id=${encodeURIComponent(id)}`, uploadedAt: new Date().toISOString(), size: file.size, ...meta } }, { headers: cors(request) });
 }
 
 export async function DELETE(request: Request) {
+  if (!secured(request)) return Response.json({ error: "需要管理密钥" }, { status: 401, headers: cors(request) });
   const id = new URL(request.url).searchParams.get("id");
-  if (!id || id.includes("/")) return Response.json({ error: "无效样片" }, { status: 400 });
+  if (!id || id.includes("/")) return Response.json({ error: "无效样片" }, { status: 400, headers: cors(request) });
   await bucket().delete(`samples/${id}`);
-  return Response.json({ ok: true });
+  return Response.json({ ok: true }, { headers: cors(request) });
 }
