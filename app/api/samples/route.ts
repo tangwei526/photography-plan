@@ -12,8 +12,13 @@ const cleanText = (value: unknown, max = 500) => String(value || "").trim().slic
 const allowedOrigin = "https://tangwei526.github.io";
 const cors = (request: Request) => ({ "access-control-allow-origin": request.headers.get("origin") === allowedOrigin ? allowedOrigin : "", "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS", "access-control-allow-headers": "content-type,x-admin-key", "vary": "origin" });
 const secured = (request: Request) => {
-  const configured = (env as unknown as { SAMPLE_ADMIN_KEY?: string }).SAMPLE_ADMIN_KEY;
-  return Boolean(configured && request.headers.get("x-admin-key") === configured);
+  const values = env as unknown as { SAMPLE_ADMIN_KEY?: string; SAMPLE_ADMIN_SESSION?: string };
+  const cookie = request.headers.get("cookie") || "";
+  const session = cookie.split(";").map(part => part.trim()).find(part => part.startsWith("shancheng_admin="))?.slice("shancheng_admin=".length);
+  return Boolean(
+    (values.SAMPLE_ADMIN_KEY && request.headers.get("x-admin-key") === values.SAMPLE_ADMIN_KEY) ||
+    (values.SAMPLE_ADMIN_SESSION && session === values.SAMPLE_ADMIN_SESSION)
+  );
 };
 
 export async function OPTIONS(request: Request) {
