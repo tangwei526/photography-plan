@@ -5,7 +5,7 @@ const sessionCookie = "shancheng_session";
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  if (pathname === "/login" || pathname === "/api/auth" || pathname.startsWith("/api/samples")) {
+  if (pathname === "/login" || pathname === "/api/auth" || pathname.startsWith("/api/samples") || pathname === "/api/calendar-feed") {
     return NextResponse.next();
   }
 
