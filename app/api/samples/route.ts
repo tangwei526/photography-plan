@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 
 type SampleMeta = {
   taskId: string; district: string; location: string; theme: string; themeCategory: string;
+  device: string; shootTime: string;
   stationId: string; stationName: string; stationDescription: string;
   subjectDescription: string; note: string; originalName: string;
 };
@@ -70,11 +71,11 @@ export async function POST(request: Request) {
       const type = cleanText(body.type, 80);
       const size = Number(body.size || 0);
       if (!displayableImageTypes.has(type)) return Response.json({ error: "暂不支持 HEIC/RAW，请先转换为 JPG、PNG、WebP、GIF 或 AVIF" }, { status: 415, headers: cors(request) });
-      if (!Number.isFinite(size) || size <= 0 || size > 20 * 1024 * 1024) return Response.json({ error: "单张图片不能超过 20MB" }, { status: 400, headers: cors(request) });
+      if (!Number.isFinite(size) || size <= 0 || size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400, headers: cors(request) });
       const id = `${crypto.randomUUID()}.${extensionFor(type)}`;
       const meta: SampleMeta = {
         taskId: cleanText(body.taskId, 40), district: cleanText(body.district, 60), location: cleanText(body.location, 160),
-        theme: cleanText(body.theme, 100), themeCategory: cleanText(body.themeCategory, 40), stationId: cleanText(body.stationId, 80), stationName: cleanText(body.stationName, 160),
+        theme: cleanText(body.theme, 100), themeCategory: cleanText(body.themeCategory, 40), device: cleanText(body.device, 40), shootTime: cleanText(body.shootTime, 40), stationId: cleanText(body.stationId, 80), stationName: cleanText(body.stationName, 160),
         stationDescription: cleanText(body.stationDescription, 500), subjectDescription: "", note: cleanText(body.note, 500), originalName: cleanText(body.originalName, 200),
       };
       const multipart = await bucket().createMultipartUpload(`samples/${id}`, { httpMetadata: { contentType: type }, customMetadata: meta });
@@ -93,12 +94,12 @@ export async function POST(request: Request) {
   const form = await request.formData();
   const file = form.get("file");
   if (!(file instanceof File) || !displayableImageTypes.has(file.type)) return Response.json({ error: "暂不支持 HEIC/RAW，请先转换为 JPG、PNG、WebP、GIF 或 AVIF" }, { status: 415, headers: cors(request) });
-  if (file.size > 20 * 1024 * 1024) return Response.json({ error: "单张图片不能超过 20MB" }, { status: 400 });
+  if (file.size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400 });
   const ext = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8);
   const id = `${crypto.randomUUID()}.${ext || "jpg"}`;
   const meta: SampleMeta = {
     taskId: clean(form.get("taskId"), 40), district: clean(form.get("district"), 60), location: clean(form.get("location"), 160),
-    theme: clean(form.get("theme"), 100), themeCategory: clean(form.get("themeCategory"), 40), stationId: clean(form.get("stationId"), 80), stationName: clean(form.get("stationName"), 160),
+    theme: clean(form.get("theme"), 100), themeCategory: clean(form.get("themeCategory"), 40), device: clean(form.get("device"), 40), shootTime: clean(form.get("shootTime"), 40), stationId: clean(form.get("stationId"), 80), stationName: clean(form.get("stationName"), 160),
     stationDescription: clean(form.get("stationDescription"), 500), subjectDescription: "", note: clean(form.get("note"), 500), originalName: file.name.slice(0, 200),
   };
   await bucket().put(`samples/${id}`, file.stream(), { httpMetadata: { contentType: file.type }, customMetadata: meta });
@@ -122,7 +123,7 @@ export async function PUT(request: Request) {
   const size = Number(request.headers.get("content-length") || 0);
   if (!id || id.includes("/")) return Response.json({ error: "无效样片" }, { status: 400, headers: cors(request) });
   if (!displayableImageTypes.has(type)) return Response.json({ error: "请改用 JPG、PNG、WebP、GIF 或 AVIF" }, { status: 415, headers: cors(request) });
-  if (size > 20 * 1024 * 1024) return Response.json({ error: "单张图片不能超过 20MB" }, { status: 400, headers: cors(request) });
+  if (size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400, headers: cors(request) });
   const existing = await bucket().get(`samples/${id}`);
   if (!existing) return Response.json({ error: "样片不存在" }, { status: 404, headers: cors(request) });
   const replacementId = `${crypto.randomUUID()}.${extensionFor(type)}`;
@@ -144,6 +145,9 @@ export async function PATCH(request: Request) {
     originalName: cleanText(body.originalName, 200),
     location: cleanText(body.location, 160),
     themeCategory: cleanText(body.themeCategory, 40),
+    device: cleanText(body.device, 40),
+    shootTime: cleanText(body.shootTime, 40),
+    stationId: cleanText(body.stationId, 80),
     stationName: cleanText(body.stationName, 160),
     stationDescription: cleanText(body.stationDescription, 500),
     subjectDescription: cleanText(body.subjectDescription, 500),

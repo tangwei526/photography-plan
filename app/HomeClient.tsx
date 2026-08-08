@@ -10,10 +10,10 @@ type ThemeCategory = "雨天" | "桥梁" | "地铁" | "彩虹" | "朝霞" | "晚
 type View = "library" | "gallery" | "map" | "calendar" | "coverage";
 type Station = { id: string; name: string; description: string };
 type Sample = { id: string; name: string; url: string };
-type GallerySample = { id:string; url:string; uploadedAt:string; size?:number; taskId:string; district:string; location:string; theme:string; themeCategory?:string; stationId:string; stationName:string; stationDescription:string; subjectDescription?:string; note:string; originalName:string; local?:boolean };
-type SampleDraft = Pick<GallerySample,"originalName"|"location"|"themeCategory"|"stationName"|"stationDescription"|"subjectDescription"|"note">;
+type GallerySample = { id:string; url:string; uploadedAt:string; size?:number; taskId:string; district:string; location:string; theme:string; themeCategory?:string; device?:string; shootTime?:string; stationId:string; stationName:string; stationDescription:string; subjectDescription?:string; note:string; originalName:string; local?:boolean };
+type SampleDraft = Pick<GallerySample,"originalName"|"location"|"themeCategory"|"device"|"shootTime"|"stationId"|"stationName"|"stationDescription"|"subjectDescription"|"note">;
 type UploadPart = { partNumber:number; etag:string };
-type UploadJob = { jobId:string; file:File; taskId:string; district:string; location:string; theme:string; themeCategory:string; stationId:string; stationName:string; stationDescription:string; note:string; originalName:string; uploadId?:string; objectId?:string; parts:UploadPart[]; status:"waiting"|"uploading"|"failed"; error?:string; createdAt:number };
+type UploadJob = { jobId:string; file:File; taskId:string; district:string; location:string; theme:string; themeCategory:string; device:string; shootTime:string; stationId:string; stationName:string; stationDescription:string; note:string; originalName:string; uploadId?:string; objectId?:string; parts:UploadPart[]; status:"waiting"|"uploading"|"failed"; error?:string; createdAt:number };
 type Task = {
   id:number; district:string; location:string; priority:Priority; theme:string; themeCategory?:string; methods:string[]; media:string[];
   clarity:string; status:Status; note:string; sourceRow:number; longitude?:number; latitude?:number;
@@ -63,6 +63,27 @@ const baseTasks=(sourceData as unknown as Task[]).map(normalizeTask);
 const split=(v:unknown)=>String(v||"").split(/[，,、;；]/).map(x=>x.trim()).filter(Boolean);
 const n=(v:unknown)=>{const x=Number(v);return Number.isFinite(x)?x:undefined};
 const supportedUploadTypes=new Set(["image/jpeg","image/png","image/webp","image/gif","image/avif"]);
+const shootTimes=["日出","日落","日出蓝调","日落蓝调","夜景"];
+const uploadLimitBytes=4*1024*1024;
+const uploadTargetBytes=4*1024*1024-64*1024;
+async function compressForUpload(source:File){
+  if(source.size<=uploadLimitBytes)return source;
+  let bitmap:ImageBitmap;
+  try{bitmap=await createImageBitmap(source)}catch{throw new Error(`${source.name} 无法压缩，请先转换为 JPG 后重试`)}
+  try{
+    let scale=Math.min(1,5000/Math.max(bitmap.width,bitmap.height));
+    let result:Blob|null=null;
+    for(let resize=0;resize<6;resize++){
+      const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+      const context=canvas.getContext("2d");if(!context)throw new Error("浏览器无法处理图片");context.fillStyle="#fff";context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+      for(const quality of [.9,.82,.74,.66,.58,.5]){result=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));if(result&&result.size<=uploadTargetBytes)break}
+      if(result&&result.size<=uploadTargetBytes)break;
+      scale*=.78;
+    }
+    if(!result||result.size>uploadTargetBytes)throw new Error(`${source.name} 压缩后仍超过 4MB`);
+    return new File([result],`${source.name.replace(/\.[^.]+$/,"")}.jpg`,{type:"image/jpeg",lastModified:source.lastModified});
+  }finally{bitmap.close()}
+}
 const uploadDb=()=>new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open("shancheng-upload-queue",1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains("jobs"))request.result.createObjectStore("jobs",{keyPath:"jobId"})};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});
 async function uploadJobs(){const db=await uploadDb();return new Promise<UploadJob[]>((resolve,reject)=>{const request=db.transaction("jobs","readonly").objectStore("jobs").getAll();request.onsuccess=()=>resolve(request.result as UploadJob[]);request.onerror=()=>reject(request.error)})}
 async function saveUploadJob(job:UploadJob){const db=await uploadDb();return new Promise<void>((resolve,reject)=>{const request=db.transaction("jobs","readwrite").objectStore("jobs").put(job);request.onsuccess=()=>resolve();request.onerror=()=>reject(request.error)})}
@@ -322,14 +343,15 @@ function Gallery({tasks,onEdit}:{tasks:Task[];onEdit:(id:number)=>void}){
   const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState("");
   const [editingMeta,setEditingMeta]=useState(false); const [savingMeta,setSavingMeta]=useState(false); const [editError,setEditError]=useState("");
   const [queue,setQueue]=useState<UploadJob[]>([]); const [broken,setBroken]=useState<Set<string>>(new Set());
-  const [draft,setDraft]=useState<SampleDraft>({originalName:"",location:"",themeCategory:"",stationName:"",stationDescription:"",subjectDescription:"",note:""});
-  const [taskId,setTaskId]=useState(String(tasks[0]?.id||"")); const [stationName,setStationName]=useState(""); const [note,setNote]=useState(""); const filesRef=useRef<HTMLInputElement>(null);
+  const [draft,setDraft]=useState<SampleDraft>({originalName:"",location:"",themeCategory:"",device:"",shootTime:"",stationId:"",stationName:"",stationDescription:"",subjectDescription:"",note:""});
+  const [taskId,setTaskId]=useState(String(tasks[0]?.id||"")); const [stationName,setStationName]=useState(""); const [uploadDevice,setUploadDevice]=useState(""); const [uploadShootTime,setUploadShootTime]=useState(""); const [uploadLocation,setUploadLocation]=useState(""); const [note,setNote]=useState(""); const filesRef=useRef<HTMLInputElement>(null);
   const load=async()=>{setLoading(true);setError("");try{const r=await fetch(sampleApi);if(!r.ok)throw new Error();const d=await r.json();setRemote((d.items||[]).map((x:GallerySample)=>({...x,themeCategory:x.themeCategory||inferThemeCategory(x.theme),url:x.url.startsWith("/")?`${sampleApi}${x.url.slice("/api/samples".length)}`:x.url})))}catch{setError("云端样片暂时无法读取，请稍后重试。")}finally{setLoading(false)}};
   useEffect(()=>{load();uploadJobs().then(setQueue).catch(()=>{})},[]);
   const local=useMemo(()=>tasks.flatMap(t=>(t.samples||[]).map(s=>({id:`local-${t.id}-${s.id}`,url:s.url,uploadedAt:"",taskId:String(t.id),district:t.district,location:t.location,theme:t.theme,themeCategory:t.themeCategory||inferThemeCategory(t.theme),stationId:t.stations?.[0]?.id||"",stationName:t.stations?.[0]?.name||"未指定机位",stationDescription:t.stations?.[0]?.description||"",subjectDescription:"",note:t.note||"",originalName:s.name,local:true} as GallerySample))),[tasks]);
   const all=[...remote,...local]; const districts=[...new Set(all.map(x=>x.district).filter(Boolean))]; const themes=[...new Set(all.map(x=>x.theme).filter(Boolean))];
-  const shown=all.filter(x=>(district==="全部行政区"||x.district===district)&&(theme==="全部主题"||x.theme===theme)&&(category==="全部归类"||(x.themeCategory||"")===category)&&`${x.location} ${x.stationName} ${x.themeCategory||"未归类"} ${x.theme} ${x.subjectDescription||""} ${x.note} ${x.originalName}`.toLowerCase().includes(query.toLowerCase()));
+  const shown=all.filter(x=>(district==="全部行政区"||x.district===district)&&(theme==="全部主题"||x.theme===theme)&&(category==="全部归类"||(x.themeCategory||"")===category)&&`${x.location} ${x.stationName} ${x.device||""} ${x.shootTime||""} ${x.themeCategory||"未归类"} ${x.theme} ${x.subjectDescription||""} ${x.note} ${x.originalName}`.toLowerCase().includes(query.toLowerCase()));
   const pickedTask=tasks.find(t=>String(t.id)===taskId);
+  const activeTask=active?tasks.find(t=>String(t.id)===active.taskId):undefined;
   async function resumeUploads(jobs:UploadJob[]){if(!jobs.length||!(await ensureAdmin()))return;
 setUploading(true);
 setError("");
@@ -339,7 +361,7 @@ index++){let job={...jobs[index],status:"uploading" as const,error:""};
 try{await saveUploadJob(job);
 setQueue(items=>items.map(x=>x.jobId===job.jobId?job:x));
 setProgress(`正在续传 ${index+1} / ${jobs.length}：${job.originalName}`);
-if(!job.uploadId||!job.objectId){const init=await fetch(sampleApi,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"init",type:job.file.type,size:job.file.size,taskId:job.taskId,district:job.district,location:job.location,theme:job.theme,themeCategory:job.themeCategory,stationId:job.stationId,stationName:job.stationName,stationDescription:job.stationDescription,note:job.note,originalName:job.originalName})});
+if(!job.uploadId||!job.objectId){const init=await fetch(sampleApi,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"init",type:job.file.type,size:job.file.size,taskId:job.taskId,district:job.district,location:job.location,theme:job.theme,themeCategory:job.themeCategory,device:job.device,shootTime:job.shootTime,stationId:job.stationId,stationName:job.stationName,stationDescription:job.stationDescription,note:job.note,originalName:job.originalName})});
 const data=await init.json().catch(()=>({}));
 if(!init.ok)throw new Error(data.error||"无法开始上传");
 job={...job,uploadId:data.uploadId,objectId:data.id};
@@ -369,10 +391,10 @@ setQueue(items=>items.map(x=>x.jobId===failed.jobId?failed:x));
 setError("部分图片尚未完成，可稍后继续上传。")}}setUploading(false);
 setProgress("");
 await load()}
-  async function upload(){const files=[...(filesRef.current?.files||[])].slice(0,60);if(!pickedTask||!stationName.trim()||!files.length)return;const unsupported=files.filter(file=>!supportedUploadTypes.has(file.type));if(unsupported.length){setError(`${unsupported.map(file=>file.name).join("、")} 无法直接显示，请先转换为 JPG、PNG、WebP、GIF 或 AVIF。`);return}const station=pickedTask.stations?.find(s=>s.name===stationName);const jobs=files.map(file=>({jobId:crypto.randomUUID(),file,taskId:String(pickedTask.id),district:pickedTask.district,location:pickedTask.location,theme:pickedTask.theme,themeCategory:pickedTask.themeCategory||inferThemeCategory(pickedTask.theme),stationId:station?.id||"",stationName:stationName.trim(),stationDescription:station?.description||"",note,originalName:file.name,parts:[],status:"waiting" as const,createdAt:Date.now()}));await Promise.all(jobs.map(saveUploadJob));setQueue(items=>[...items,...jobs]);if(filesRef.current)filesRef.current.value="";await resumeUploads(jobs)}
-  async function reupload(item:GallerySample,file:File|undefined){if(!file||item.local||!(await ensureAdmin()))return;if(!supportedUploadTypes.has(file.type)){alert("请先转换为 JPG、PNG、WebP、GIF 或 AVIF");return}const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(file.name)}`,{method:"PUT",headers:{"content-type":file.type},body:file});const data=await r.json().catch(()=>({}));if(!r.ok){alert(data.error||"重新上传失败");return}setActive(null);setBroken(items=>{const next=new Set(items);next.delete(item.id);return next});await load()}
+  async function upload(){const sources=[...(filesRef.current?.files||[])].slice(0,60);if(!pickedTask||!stationName.trim()||!sources.length)return;const unsupported=sources.filter(file=>!supportedUploadTypes.has(file.type));if(unsupported.length){setError(`${unsupported.map(file=>file.name).join("、")} 无法直接显示，请先转换为 JPG、PNG、WebP、GIF 或 AVIF。`);return}setUploading(true);setError("");const prepared:{file:File;originalName:string}[]=[];try{for(let i=0;i<sources.length;i++){setProgress(sources[i].size>uploadLimitBytes?`正在压缩 ${i+1} / ${sources.length}`:`正在准备 ${i+1} / ${sources.length}`);prepared.push({file:await compressForUpload(sources[i]),originalName:sources[i].name})}}catch(reason){setError(reason instanceof Error?reason.message:"图片压缩失败");setUploading(false);setProgress("");return}setUploading(false);const station=pickedTask.stations?.find(s=>s.name===stationName);const jobs=prepared.map(({file,originalName})=>({jobId:crypto.randomUUID(),file,taskId:String(pickedTask.id),district:pickedTask.district,location:uploadLocation.trim(),theme:pickedTask.theme,themeCategory:pickedTask.themeCategory||inferThemeCategory(pickedTask.theme),device:uploadDevice,shootTime:uploadShootTime,stationId:station?.id||"",stationName:stationName.trim(),stationDescription:"",note,originalName,parts:[],status:"waiting" as const,createdAt:Date.now()}));await Promise.all(jobs.map(saveUploadJob));setQueue(items=>[...items,...jobs]);if(filesRef.current)filesRef.current.value="";await resumeUploads(jobs)}
+  async function reupload(item:GallerySample,file:File|undefined){if(!file||item.local||!(await ensureAdmin()))return;if(!supportedUploadTypes.has(file.type)){alert("请先转换为 JPG、PNG、WebP、GIF 或 AVIF");return}setUploading(true);setProgress(file.size>uploadLimitBytes?"正在压缩替换图片…":"正在替换图片…");let prepared:File;try{prepared=await compressForUpload(file)}catch(reason){alert(reason instanceof Error?reason.message:"图片压缩失败");setUploading(false);setProgress("");return}const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(file.name)}`,{method:"PUT",headers:{"content-type":prepared.type},body:prepared});const data=await r.json().catch(()=>({}));setUploading(false);setProgress("");if(!r.ok){alert(data.error||"重新上传失败");return}setActive(null);setBroken(items=>{const next=new Set(items);next.delete(item.id);return next});await load()}
   async function remove(item:GallerySample){if(item.local||!confirm("删除这张云端样片？删除后不可恢复。")||!(await ensureAdmin()))return;const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}`,{method:"DELETE"});if(!r.ok){alert("管理权限已失效，请重新验证");return}setActive(null);await load()}
-  async function startEdit(item:GallerySample){if(!(await ensureAdmin()))return;setDraft({originalName:item.originalName||"",location:item.location||"",themeCategory:item.themeCategory||inferThemeCategory(item.theme),stationName:item.stationName||"",stationDescription:item.stationDescription||"",subjectDescription:item.subjectDescription||"",note:item.note||""});setEditError("");setEditingMeta(true)}
+  async function startEdit(item:GallerySample){if(!(await ensureAdmin()))return;setDraft({originalName:item.originalName||"",location:item.location||"",themeCategory:item.themeCategory||inferThemeCategory(item.theme),device:item.device||"",shootTime:item.shootTime||"",stationId:item.stationId||"",stationName:item.stationName||"",stationDescription:item.stationDescription||"",subjectDescription:item.subjectDescription||"",note:item.note||""});setEditError("");setEditingMeta(true)}
   async function saveEdit(){if(!active||active.local||!(await ensureAdmin()))return;setSavingMeta(true);setEditError("");const r=await fetch(sampleApi,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:active.id,...draft})});const data=await r.json().catch(()=>({}));if(!r.ok){setEditError(data.error||"保存失败，管理权限可能已失效");setSavingMeta(false);return}const updated={...active,...data.item,url:active.url};setRemote(items=>items.map(item=>item.id===active.id?updated:item));setActive(updated);setEditingMeta(false);setSavingMeta(false)}
   return <section className="galleryPanel">
 <div className="galleryToolbar">
@@ -404,8 +426,8 @@ await load()}
 <button className="sampleCard" key={item.id} onClick={()=>setActive(item)}>
 {broken.has(item.id)?<span className="brokenSample"><b>图片无法显示</b><small>点击查看并重新上传</small></span>:<img src={item.url} alt={`${item.location} ${item.stationName}`} onError={()=>setBroken(items=>new Set(items).add(item.id))}/>}
 <span>
-<b>{item.location}</b>
-<small>{item.themeCategory||"未归类"} · {item.stationName} · {item.theme}</small>
+<b>{item.originalName||"未命名样片"}</b>
+<small>{item.stationName||"未关联机位"}{item.device?` · ${item.device}`:""}{item.shootTime?` · ${item.shootTime}`:""}</small>
 </span>
 </button>)}</div>:<div className="galleryEmpty">
 <strong>画廊还是空的</strong>
@@ -418,7 +440,7 @@ await load()}
 <div>
 <small>UPLOAD REFERENCES</small>
 <h2>批量上传样片</h2>
-<p>一次选择多张照片，并统一关联到一个拍摄机位。</p>
+<p>每张照片自动使用原文件名作为样片名称，并统一关联到一个拍摄机位。</p>
 </div>
 <button onClick={()=>setUploadOpen(false)}>×</button>
 </div>
@@ -429,10 +451,20 @@ await load()}
 <datalist id="station-options">{(pickedTask?.stations||[]).map(s=>
 <option key={s.id} value={s.name}/>)}</datalist>
 </label>
+<div className="uploadMetaGrid">
+<label>拍摄设备<select value={uploadDevice} onChange={e=>setUploadDevice(e.target.value)}>
+<option value="">默认空白</option><option>相机</option><option>无人机</option>
+</select></label>
+<label>拍摄时间<select value={uploadShootTime} onChange={e=>setUploadShootTime(e.target.value)}>
+<option value="">默认空白</option>{shootTimes.map(value=><option key={value}>{value}</option>)}
+</select></label>
+</div>
+<label>拍摄位置<input value={uploadLocation} onChange={e=>setUploadLocation(e.target.value)} placeholder="默认空白，可上传后单独编辑"/>
+</label>
 <label>样片备注<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="构图、光线、焦段、值得参考的细节……"/>
 </label>
 <label className="fileDrop">选择照片<input ref={filesRef} type="file" accept="image/*" multiple/>
-<small>支持 JPG、PNG、WebP、GIF、AVIF；单张不超过 20MB。HEIC/RAW 请先转换。</small>
+<small>支持 JPG、PNG、WebP、GIF、AVIF；超过 4MB 会在上传前自动压缩到 4MB 以内。HEIC/RAW 请先转换。</small>
 </label>{error&&<p className="uploadError">{error}</p>}<div className="modalActions">
 <button onClick={()=>setUploadOpen(false)}>取消</button>
 <button className="primary" disabled={uploading||!stationName.trim()} onClick={upload}>{uploading?progress:"开始上传"}</button>
@@ -449,13 +481,28 @@ await load()}
 <h2>编辑样片信息</h2>
 <label>样片名称<input value={draft.originalName} onChange={e=>setDraft({...draft,originalName:e.target.value})}/>
 </label>
-<label>拍摄位置<input value={draft.location} onChange={e=>setDraft({...draft,location:e.target.value})}/>
+<label>拍摄设备<select value={draft.device||""} onChange={e=>setDraft({...draft,device:e.target.value})}>
+<option value="">未填写</option>
+<option>相机</option>
+<option>无人机</option>
+</select>
+</label>
+<label>关联机位<select value={draft.stationName||""} onChange={e=>{const station=activeTask?.stations?.find(x=>x.name===e.target.value);setDraft({...draft,stationId:station?.id||"",stationName:e.target.value,stationDescription:station?.description||draft.stationDescription})}}>
+<option value="">未关联机位</option>
+{draft.stationName&&!activeTask?.stations?.some(x=>x.name===draft.stationName)&&<option value={draft.stationName}>{draft.stationName}</option>}
+{(activeTask?.stations||[]).map(station=><option key={station.id} value={station.name}>{station.name}</option>)}
+</select>
+</label>
+<label>拍摄时间<select value={draft.shootTime||""} onChange={e=>setDraft({...draft,shootTime:e.target.value})}>
+<option value="">未填写</option>
+{shootTimes.map(value=><option key={value}>{value}</option>)}
+</select>
+</label>
+<label>拍摄位置<input value={draft.location} placeholder="例如：观景台西侧栏杆" onChange={e=>setDraft({...draft,location:e.target.value})}/>
 </label>
 <label>主题归类<select value={draft.themeCategory||""} onChange={e=>setDraft({...draft,themeCategory:e.target.value})}>
 <option value="">未归类</option>{themeCategories.map(x=>
 <option key={x}>{x}</option>)}</select>
-</label>
-<label>拍摄机位<input value={draft.stationName} onChange={e=>setDraft({...draft,stationName:e.target.value})}/>
 </label>
 <label>机位说明<textarea value={draft.stationDescription} onChange={e=>setDraft({...draft,stationDescription:e.target.value})}/>
 </label>
@@ -464,10 +511,10 @@ await load()}
 <label>样片备注<textarea value={draft.note} onChange={e=>setDraft({...draft,note:e.target.value})}/>
 </label>{editError&&<p className="uploadError">{editError}</p>}<div className="sampleEditActions">
 <button onClick={()=>setEditingMeta(false)}>取消</button>
-<button className="primary" disabled={savingMeta||!draft.originalName.trim()||!draft.location.trim()} onClick={saveEdit}>{savingMeta?"正在保存…":"保存修改"}</button>
+<button className="primary" disabled={savingMeta||!draft.originalName.trim()} onClick={saveEdit}>{savingMeta?"正在保存…":"保存修改"}</button>
 </div>
 </div>:<>
-<h2>{active.location}</h2>
+<h2>{active.originalName||"未命名样片"}</h2>
 <span className="galleryTag">{active.district}</span>
 <dl>
 <div>
@@ -479,11 +526,19 @@ await load()}
 <dd>{active.location||"未填写"}</dd>
 </div>
 <div>
+<dt>拍摄设备</dt>
+<dd>{active.device||"未填写"}</dd>
+</div>
+<div>
+<dt>拍摄时间</dt>
+<dd>{active.shootTime||"未填写"}</dd>
+</div>
+<div>
 <dt>主题归类</dt>
 <dd>{active.themeCategory||"未归类"}</dd>
 </div>
 <div>
-<dt>拍摄机位</dt>
+<dt>关联机位</dt>
 <dd>{active.stationName||"未指定"}</dd>
 </div>
 <div>
