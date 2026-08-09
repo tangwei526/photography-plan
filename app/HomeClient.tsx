@@ -641,7 +641,7 @@ function Calendar({month,setMonth,events,onSave,onDelete,onSync}:{month:string;s
 <div className="modalActions"><button onClick={()=>setDraft(null)}>取消</button><button className="primary" disabled={saving} onClick={save}>{saving?"正在保存…":"保存日程"}</button></div>
 </div></div>}</>}
 
-const themeIcon=(name:string)=>{const icons:Record<string,string>={彩虹:"rainbow.png",朝霞:"dawn.png",晚霞:"sunset.png",寺庙:"temple.png",日月对齐:"sun-moon.png",太阳月亮同框:"sun-moon.png",桥梁:"bridge.png",大桥:"bridge.png",立交:"interchange.png",立交桥:"interchange.png",雷电:"lightning.png",雨天:"rain.png",轨道交通:"transit.png",地铁:"transit.png"};return icons[name]?`${assetBase}theme-icons/${icons[name]}`:""};
+const themeIcon=(name:string)=>{const icons:Record<string,string>={彩虹:"rainbow.png",朝霞:"dawn.png",晚霞:"sunset.png",寺庙:"temple.png",日月对齐:"sun-moon.png",太阳月亮同框:"sun-moon.png",桥梁:"bridge.png",大桥:"bridge.png",立交:"interchange.png",立交桥:"interchange.png",雷电:"lightning.png",雨天:"rain.png",轨道交通:"transit.png",地铁:"transit.png",星空:"starry.png",星空摄影:"starry.png",老街:"old-street.png",老街巷:"old-street.png",长江索道:"cableway.png",索道:"cableway.png",字母:"letters.png",数字:"numbers.png"};return icons[name]?`${assetBase}theme-icons/${icons[name]}`:""};
 function ThemeManager({records,tasks,onAdd,onRename,onDelete,onOpen,onEdit}:{records:ThemeRecord[];tasks:Task[];onAdd:()=>void;onRename:(record:ThemeRecord)=>void;onDelete:(record:ThemeRecord)=>void;onOpen:(name:string)=>void;onEdit:(id:number)=>void}){
   const [activeId,setActiveId]=useState<string|null>(null);const active=records.find(record=>record.id===activeId);const related=active?tasks.filter(task=>task.themeCategory===active.name):[];
   return <><section className="themeManager">
