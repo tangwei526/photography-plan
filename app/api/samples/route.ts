@@ -97,19 +97,22 @@ export async function POST(request: Request) {
     }
     return Response.json({ error: "无效上传操作" }, { status: 400, headers: cors(request) });
   }
-  const form = await request.formData();
-  const file = form.get("file");
-  if (!(file instanceof File) || !displayableImageTypes.has(file.type)) return Response.json({ error: "暂不支持 HEIC/RAW，请先转换为 JPG、PNG、WebP、GIF 或 AVIF" }, { status: 415, headers: cors(request) });
-  if (file.size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400 });
-  const ext = (file.name.split(".").pop() || "jpg").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8);
-  const id = `${crypto.randomUUID()}.${ext || "jpg"}`;
-  const meta: SampleMeta = {
-    taskId: clean(form.get("taskId"), 40), district: clean(form.get("district"), 60), location: clean(form.get("location"), 160),
-    theme: clean(form.get("theme"), 100), themeCategory: clean(form.get("themeCategory"), 40), device: clean(form.get("device"), 40), shootTime: clean(form.get("shootTime"), 40), stationId: clean(form.get("stationId"), 80), stationName: clean(form.get("stationName"), 160),
-    stationDescription: clean(form.get("stationDescription"), 500), subjectDescription: "", note: clean(form.get("note"), 500), originalName: file.name.slice(0, 200),
-  };
-  await bucket().put(`samples/${id}`, file.stream(), { httpMetadata: { contentType: file.type }, customMetadata: meta });
-  return Response.json({ item: { id, url: `/api/samples?id=${encodeURIComponent(id)}`, uploadedAt: new Date().toISOString(), size: file.size, ...meta } }, { headers: cors(request) });
+  try {
+    const form = await request.formData();
+    const file = form.get("file");
+    if (!(file instanceof File) || !displayableImageTypes.has(file.type)) return Response.json({ error: "暂不支持 HEIC/RAW，请先转换为 JPG、PNG、WebP、GIF 或 AVIF" }, { status: 415, headers: jsonHeaders(request) });
+    if (file.size <= 0 || file.size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400, headers: jsonHeaders(request) });
+    const id = `${crypto.randomUUID()}.${extensionFor(file.type)}`;
+    const meta: SampleMeta = {
+      taskId: clean(form.get("taskId"), 40), district: clean(form.get("district"), 60), location: clean(form.get("location"), 160),
+      theme: clean(form.get("theme"), 100), themeCategory: clean(form.get("themeCategory"), 40), device: clean(form.get("device"), 40), shootTime: clean(form.get("shootTime"), 40), stationId: clean(form.get("stationId"), 80), stationName: clean(form.get("stationName"), 160),
+      stationDescription: clean(form.get("stationDescription"), 500), subjectDescription: "", note: clean(form.get("note"), 500), originalName: clean(form.get("originalName"), 200) || file.name.slice(0, 200),
+    };
+    await bucket().put(`samples/${id}`, file.stream(), { httpMetadata: { contentType: file.type }, customMetadata: meta });
+    return Response.json({ item: { id, url: `/api/samples?id=${encodeURIComponent(id)}`, uploadedAt: new Date().toISOString(), size: file.size, ...meta } }, { headers: jsonHeaders(request) });
+  } catch {
+    return Response.json({ error: "样片存储失败，请重试" }, { status: 500, headers: jsonHeaders(request) });
+  }
 }
 
 export async function PUT(request: Request) {

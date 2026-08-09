@@ -405,38 +405,19 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
           setProgress(`正在压缩 ${index+1} / ${jobs.length}：${job.originalName}`);
           job={...job,file:await compressForUpload(job.file),uploadId:undefined,objectId:undefined,parts:[]};
         }
+        job={...job,uploadId:undefined,objectId:undefined,parts:[]};
         await saveUploadJob(job);
         setQueue(items=>items.map(x=>x.jobId===job.jobId?job:x));
         setProgress(`正在上传 ${index+1} / ${jobs.length}：${job.originalName}`);
-        if(!job.uploadId||!job.objectId){
-          const init=await fetch(sampleApi,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"init",type:job.file.type,size:job.file.size,taskId:job.taskId,district:job.district,location:job.location,theme:job.theme,themeCategory:job.themeCategory,device:job.device,shootTime:job.shootTime,stationId:job.stationId,stationName:job.stationName,stationDescription:job.stationDescription,note:job.note,originalName:job.originalName})});
-          const data=await init.json().catch(()=>({}));
-          if(!init.ok)throw new Error(data.error||`服务器拒绝上传（${init.status}）`);
-          job={...job,uploadId:data.uploadId,objectId:data.id};
-          await saveUploadJob(job);
+        let response:Response|null=null;let data:{error?:string;item?:GallerySample}={};let networkFailed=false;
+        for(let attempt=1;attempt<=3;attempt++){
+          const form=new FormData();form.append("file",job.file);form.append("taskId",job.taskId);form.append("district",job.district);form.append("location",job.location);form.append("theme",job.theme);form.append("themeCategory",job.themeCategory);form.append("device",job.device);form.append("shootTime",job.shootTime);form.append("stationId",job.stationId);form.append("stationName",job.stationName);form.append("stationDescription",job.stationDescription);form.append("note",job.note);form.append("originalName",job.originalName);
+          try{response=await fetch(sampleApi,{method:"POST",body:form});data=await response.json().catch(()=>({}));networkFailed=false;if(response.ok||response.status<500)break}catch{networkFailed=true}
+          if(attempt<3){setProgress(`正在重试 ${index+1} / ${jobs.length}：第 ${attempt+1} 次`);await new Promise(resolve=>setTimeout(resolve,attempt*900))}
         }
-        const chunkSize=5*1024*1024;const total=Math.ceil(job.file.size/chunkSize);
-        for(let partNumber=1;partNumber<=total;partNumber++){
-          if(job.parts.some(p=>p.partNumber===partNumber))continue;
-          const body=job.file.slice((partNumber-1)*chunkSize,Math.min(partNumber*chunkSize,job.file.size));let response:Response|null=null;
-          for(let attempt=1;attempt<=3;attempt++){
-            try{response=await fetch(`${sampleApi}?upload=part&id=${encodeURIComponent(job.objectId!)}&uploadId=${encodeURIComponent(job.uploadId!)}&partNumber=${partNumber}`,{method:"PUT",body});if(response.ok)break}catch{}
-            if(attempt<3)await new Promise(resolve=>setTimeout(resolve,attempt*700));
-          }
-          const part=await response?.json().catch(()=>({}));
-          if(!response?.ok)throw new Error(part?.error||`上传中断（第 ${partNumber} 段，${response?.status||"网络错误"}）`);
-          job={...job,parts:[...job.parts,{partNumber:Number(part.partNumber),etag:String(part.etag)}]};
-          await saveUploadJob(job);setQueue(items=>items.map(x=>x.jobId===job.jobId?job:x));
-          setProgress(`正在上传 ${index+1} / ${jobs.length}：${Math.round(job.parts.length/total*100)}%`);
-        }
-        const complete=await fetch(sampleApi,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"complete",id:job.objectId,uploadId:job.uploadId,parts:job.parts})});
-        const completeData=await complete.json().catch(()=>({}));let uploaded=completeData.item as GallerySample|undefined;
-        if(!complete.ok){
-          const check=await fetch(`${sampleApi}?check=${encodeURIComponent(job.objectId!)}`,{cache:"no-store"}).then(r=>r.json()).catch(()=>({exists:false}));
-          if(!check.exists)throw new Error(completeData.error||`服务器合并图片失败（${complete.status}）`);
-          uploaded=check.item;
-        }
-        if(!uploaded)uploaded={id:job.objectId!,url:`/api/samples?id=${encodeURIComponent(job.objectId!)}`,uploadedAt:new Date().toISOString(),size:job.file.size,taskId:job.taskId,district:job.district,location:job.location,theme:job.theme,themeCategory:job.themeCategory,device:job.device,shootTime:job.shootTime,stationId:job.stationId,stationName:job.stationName,stationDescription:job.stationDescription,subjectDescription:"",note:job.note,originalName:job.originalName};
+        if(!response?.ok)throw new Error(data.error||(networkFailed?"网络连接中断，已自动重试 3 次":`服务器上传失败（${response?.status||500}）`));
+        const uploaded=data.item as GallerySample|undefined;
+        if(!uploaded)throw new Error("服务器未返回样片信息，请重试");
         const normalized=normalizeSample(uploaded);
         setRemote(items=>[normalized,...items.filter(item=>item.id!==normalized.id)]);
         await deleteUploadJob(job.jobId);setQueue(items=>items.filter(x=>x.jobId!==job.jobId));succeeded++;
