@@ -445,7 +445,7 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
     else if(succeeded){setUploadOpen(false);notify(`${succeeded} 张样片已上传并加入画廊`,"success");}
   }
   async function upload(){
-    const sources=[...(filesRef.current?.files||[])].slice(0,60);if(!pickedTask||!stationName.trim()||!sources.length)return;
+    const sources=[...(filesRef.current?.files||[])];if(!pickedTask||!stationName.trim()||!sources.length)return;
     setUploading(true);setUploadError("");const station=pickedTask.stations?.find(s=>s.name===stationName);const jobs:UploadJob[]=[];
     for(let i=0;i<sources.length;i++){
       const source=sources[i];let file=source;let status:UploadJob["status"]="waiting";let jobError="";
@@ -532,7 +532,7 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
 <label>样片备注<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="构图、光线、焦段、值得参考的细节……"/>
 </label>
 <label className="fileDrop">选择照片<input ref={filesRef} type="file" accept="image/*" multiple/>
-<small>支持 JPG、PNG、WebP、GIF、AVIF；超过 4MB 会在上传前自动压缩到 4MB 以内。HEIC/RAW 请先转换。</small>
+<small>上传数量不限；支持 JPG、PNG、WebP、GIF、AVIF。超过 4MB 会自动压缩，HEIC/RAW 请先转换。</small>
 </label>{uploadError&&<p className="uploadError">{uploadError}</p>}<div className="modalActions">
 <button onClick={()=>setUploadOpen(false)}>取消</button>
 <button className="primary" disabled={uploading||!stationName.trim()} onClick={upload}>{uploading?progress:"开始上传"}</button>
