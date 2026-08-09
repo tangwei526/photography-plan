@@ -170,9 +170,9 @@ export default function Home(){
 <button className="soft" onClick={logout}>退出</button>
 <input ref={inputRef} hidden type="file" accept=".xlsx,.xls" onChange={e=>e.target.files?.[0]&&importExcel(e.target.files[0])}/>
 </div>
-</header>
-  <div className="shell">
-<section className="intro">
+  </header>
+  <div className={view==="gallery"?"shell galleryShell":"shell"}>
+{view!=="gallery"&&<><section className="intro">
 <div>
 <p className="eyebrow">CHONGQING PHOTO ATLAS · WORKSPACE</p>
 <h1>{view==="library"?"把重庆，拍得更完整。":view==="gallery"?"先看见，再抵达。":view==="map"?"先看天，再出发。":view==="calendar"?"把好天气留给重要机位。":view==="themes"?"按主题，整理每一个机位。":"每一个空白，都有下一次出发。"}</h1>
@@ -217,7 +217,7 @@ export default function Home(){
 <em>{tasks.filter(t=>t.longitude&&t.latitude).length} 条含精确坐标</em>
 </div>
 </article>
-</section>
+</section></>}
 
   {view==="library"&&<section className="workspace">
 <aside>
@@ -357,6 +357,7 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
   const [query,setQuery]=useState(""); const [district,setDistrict]=useState("全部行政区"); const [theme,setTheme]=useState("全部主题"); const [category,setCategory]=useState("全部归类");
   const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState("");
   const [editingMeta,setEditingMeta]=useState(false); const [savingMeta,setSavingMeta]=useState(false); const [editError,setEditError]=useState("");
+  const [toast,setToast]=useState<{message:string;kind:"success"|"error"}|null>(null); const toastTimer=useRef<number|undefined>(undefined);
   const [queue,setQueue]=useState<UploadJob[]>([]); const [broken,setBroken]=useState<Set<string>>(new Set());
   const [draft,setDraft]=useState<SampleDraft>({originalName:"",location:"",themeCategory:"",device:"",shootTime:"",stationId:"",stationName:"",stationDescription:"",subjectDescription:"",note:""});
   const [taskId,setTaskId]=useState(String(tasks[0]?.id||"")); const [stationName,setStationName]=useState(""); const [uploadDevice,setUploadDevice]=useState(""); const [uploadShootTime,setUploadShootTime]=useState(""); const [uploadLocation,setUploadLocation]=useState(""); const [note,setNote]=useState(""); const filesRef=useRef<HTMLInputElement>(null);
@@ -367,6 +368,7 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
   const shown=all.filter(x=>(district==="全部行政区"||x.district===district)&&(theme==="全部主题"||x.theme===theme)&&(category==="全部归类"||(x.themeCategory||"")===category)&&`${x.location} ${x.stationName} ${x.device||""} ${x.shootTime||""} ${x.themeCategory||"未归类"} ${x.theme} ${x.subjectDescription||""} ${x.note} ${x.originalName}`.toLowerCase().includes(query.toLowerCase()));
   const pickedTask=tasks.find(t=>String(t.id)===taskId);
   const activeTask=active?tasks.find(t=>String(t.id)===active.taskId):undefined;
+  function notify(message:string,kind:"success"|"error"){if(toastTimer.current)window.clearTimeout(toastTimer.current);setToast({message,kind});toastTimer.current=window.setTimeout(()=>setToast(null),2600)}
   async function resumeUploads(jobs:UploadJob[]){if(!jobs.length||!(await ensureAdmin()))return;
 setUploading(true);
 setError("");
@@ -410,7 +412,7 @@ await load()}
   async function reupload(item:GallerySample,file:File|undefined){if(!file||item.local||!(await ensureAdmin()))return;if(!supportedUploadTypes.has(file.type)){alert("请先转换为 JPG、PNG、WebP、GIF 或 AVIF");return}setUploading(true);setProgress(file.size>uploadLimitBytes?"正在压缩替换图片…":"正在替换图片…");let prepared:File;try{prepared=await compressForUpload(file)}catch(reason){alert(reason instanceof Error?reason.message:"图片压缩失败");setUploading(false);setProgress("");return}const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(file.name)}`,{method:"PUT",headers:{"content-type":prepared.type},body:prepared});const data=await r.json().catch(()=>({}));setUploading(false);setProgress("");if(!r.ok){alert(data.error||"重新上传失败");return}setActive(null);setBroken(items=>{const next=new Set(items);next.delete(item.id);return next});await load()}
   async function remove(item:GallerySample){if(item.local||!confirm("删除这张云端样片？删除后不可恢复。")||!(await ensureAdmin()))return;const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}`,{method:"DELETE"});if(!r.ok){alert("管理权限已失效，请重新验证");return}setActive(null);await load()}
   async function startEdit(item:GallerySample){if(!(await ensureAdmin()))return;setDraft({originalName:item.originalName||"",location:item.location||"",themeCategory:item.themeCategory||inferThemeCategory(item.theme),device:item.device||"",shootTime:item.shootTime||"",stationId:item.stationId||"",stationName:item.stationName||"",stationDescription:item.stationDescription||"",subjectDescription:item.subjectDescription||"",note:item.note||""});setEditError("");setEditingMeta(true)}
-  async function saveEdit(){if(!active||active.local||!(await ensureAdmin()))return;setSavingMeta(true);setEditError("");const r=await fetch(sampleApi,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:active.id,...draft})});const data=await r.json().catch(()=>({}));if(!r.ok){setEditError(data.error||"保存失败，管理权限可能已失效");setSavingMeta(false);return}const updated={...active,...data.item,url:active.url};setRemote(items=>items.map(item=>item.id===active.id?updated:item));setActive(updated);setEditingMeta(false);setSavingMeta(false)}
+  async function saveEdit(){if(!active||active.local)return;if(!(await ensureAdmin())){notify("保存失败，请重试","error");return}setSavingMeta(true);setEditError("");try{const r=await fetch(sampleApi,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:active.id,...draft})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error();const updated={...active,...data.item,url:active.url};setRemote(items=>items.map(item=>item.id===active.id?updated:item));setEditingMeta(false);setActive(null);notify("修改成功","success")}catch{setEditError("保存失败，请重试");notify("保存失败，请重试","error")}finally{setSavingMeta(false)}}
   return <section className="galleryPanel">
 <div className="galleryToolbar">
 <div>
@@ -529,36 +531,36 @@ await load()}
 <button className="primary" disabled={savingMeta||!draft.originalName.trim()} onClick={saveEdit}>{savingMeta?"正在保存…":"保存修改"}</button>
 </div>
 </div>:<>
-<h2>{active.originalName||"未命名样片"}</h2>
+<button className="editableTitle" disabled={active.local} onClick={()=>startEdit(active)}>{active.originalName||"未命名样片"}<small>{active.local?"本地样片":"点击编辑"}</small></button>
 <span className="galleryTag">{active.district}</span>
 <dl>
 <div>
 <dt>样片名称</dt>
-<dd>{active.originalName||"样片"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.originalName||"样片"}<small>点击编辑</small></button></dd>
 </div>
 <div>
 <dt>拍摄位置</dt>
-<dd>{active.location||"未填写"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.location||"未填写"}<small>点击编辑</small></button></dd>
 </div>
 <div>
 <dt>拍摄设备</dt>
-<dd>{active.device||"未填写"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.device||"未填写"}<small>点击编辑</small></button></dd>
 </div>
 <div>
 <dt>拍摄时间</dt>
-<dd>{active.shootTime||"未填写"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.shootTime||"未填写"}<small>点击编辑</small></button></dd>
 </div>
 <div>
 <dt>主题归类</dt>
-<dd>{active.themeCategory||"未归类"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.themeCategory||"未归类"}<small>点击编辑</small></button></dd>
 </div>
 <div>
 <dt>关联机位</dt>
-<dd>{active.stationName||"未指定"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.stationName||"未指定"}<small>点击编辑</small></button></dd>
 </div>
 <div>
 <dt>机位说明</dt>
-<dd>{active.stationDescription||"暂无说明"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.stationDescription||"暂无说明"}<small>点击编辑</small></button></dd>
 </div>
 <div>
 <dt>拍摄主题</dt>
@@ -566,14 +568,14 @@ await load()}
 </div>
 <div>
 <dt>拍摄主体说明</dt>
-<dd>{active.subjectDescription||"暂无说明"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.subjectDescription||"暂无说明"}<small>点击编辑</small></button></dd>
 </div>
 <div>
 <dt>样片备注</dt>
-<dd>{active.note||"暂无备注"}</dd>
+<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.note||"暂无备注"}<small>点击编辑</small></button></dd>
 </div>
-</dl>{!active.local&&<label className="soft full reuploadButton">{broken.has(active.id)?"重新上传图片":"替换图片"}<input hidden type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" onChange={e=>reupload(active,e.target.files?.[0])}/></label>}{!active.local&&<button className="soft full editSampleButton" onClick={()=>startEdit(active)}>编辑样片信息</button>}<button className="primary full" onClick={()=>onEdit(Number(active.taskId))}>打开对应拍摄任务</button>{!active.local&&<button className="dangerText" onClick={()=>remove(active)}>删除这张样片</button>}</>}</aside>
-</div>}</section>
+</dl>{!active.local&&<label className="soft full reuploadButton">{broken.has(active.id)?"重新上传图片":"替换图片"}<input hidden type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" onChange={e=>reupload(active,e.target.files?.[0])}/></label>}<button className="primary full" onClick={()=>onEdit(Number(active.taskId))}>打开对应拍摄任务</button>{!active.local&&<button className="dangerText" onClick={()=>remove(active)}>删除这张样片</button>}</>}</aside>
+</div>}{toast&&<div className={`toast toast-${toast.kind}`} role="status"><span>{toast.kind==="success"?"✓":"!"}</span>{toast.message}</div>}</section>
 }
 
 function Calendar({month,setMonth,events,onSave,onDelete,onSync}:{month:string;setMonth:(m:string)=>void;events:CalendarEvent[];onSave:(item:CalendarEvent,isNew:boolean)=>Promise<boolean>;onDelete:(id:string)=>Promise<boolean>;onSync:()=>void}){
