@@ -1,0 +1,54 @@
+import { env } from "cloudflare:workers";
+
+const values = () => env as unknown as { AMAP_WEB_SERVICE_KEY?: string };
+const text = (value: unknown, max = 160) => String(value || "").trim().slice(0, max);
+
+async function amap(path: string, params: Record<string, string>) {
+  const key = values().AMAP_WEB_SERVICE_KEY;
+  if (!key) throw new Error("高德 Web 服务尚未配置");
+  const url = new URL(path, "https://restapi.amap.com");
+  Object.entries({ ...params, key }).forEach(([name, value]) => url.searchParams.set(name, value));
+  const response = await fetch(url, { headers: { accept: "application/json" } });
+  const data = await response.json() as Record<string, any>;
+  if (!response.ok || String(data.status) !== "1") throw new Error(text(data.info, 100) || "高德地图请求失败");
+  return data;
+}
+
+export async function POST(request: Request) {
+  const body = await request.json().catch(() => ({})) as Record<string, any>;
+  const action = text(body.action, 20);
+  try {
+    if (action === "locate") {
+      const source = Array.isArray(body.items) ? body.items.slice(0, 20) : [];
+      const items = await Promise.all(source.map(async (item: Record<string, unknown>) => {
+        const key = text(item.key, 260); const district = text(item.district, 60); const location = text(item.location, 160);
+        if (!key || !location) return { key };
+        const data = await amap("/v3/geocode/geo", { address: `重庆市${district}${location}`, city: "重庆", output: "JSON" });
+        const point = data.geocodes?.[0]; const [longitude, latitude] = String(point?.location || "").split(",").map(Number);
+        return Number.isFinite(longitude) && Number.isFinite(latitude) ? { key, longitude, latitude, formattedAddress: point.formatted_address || "" } : { key };
+      }));
+      return Response.json({ items });
+    }
+    if (action === "convert") {
+      const source = Array.isArray(body.items) ? body.items.slice(0, 40) : [];
+      const valid = source.filter((item: Record<string, unknown>) => Number.isFinite(Number(item.longitude)) && Number.isFinite(Number(item.latitude)));
+      if (!valid.length) return Response.json({ items: [] });
+      const data = await amap("/v3/assistant/coordinate/convert", { locations: valid.map((item: Record<string, unknown>) => `${Number(item.longitude).toFixed(6)},${Number(item.latitude).toFixed(6)}`).join("|"), coordsys: "gps", output: "JSON" });
+      const locations = String(data.locations || "").split(";");
+      return Response.json({ items: valid.map((item: Record<string, unknown>, index: number) => { const [longitude, latitude] = String(locations[index] || "").split(",").map(Number); return { key: text(item.key, 260), longitude, latitude }; }) });
+    }
+    if (action === "route") {
+      const locations = Array.isArray(body.locations) ? body.locations.slice(0, 8).filter((point: unknown) => Array.isArray(point) && point.length === 2 && point.every(value => Number.isFinite(Number(value)))) : [];
+      if (locations.length < 2) return Response.json({ error: "请至少选择两个点位" }, { status: 400 });
+      const format = (point: unknown[]) => `${Number(point[0]).toFixed(6)},${Number(point[1]).toFixed(6)}`;
+      const params: Record<string, string> = { origin: format(locations[0]), destination: format(locations[locations.length - 1]), extensions: "base", strategy: "10", output: "JSON" };
+      if (locations.length > 2) params.waypoints = locations.slice(1, -1).map(format).join(";");
+      const data = await amap("/v3/direction/driving", params); const path = data.route?.paths?.[0];
+      const geometry = (path?.steps || []).flatMap((step: Record<string, unknown>) => text(step.polyline, 20000).split(";").map(pair => { const [longitude, latitude] = pair.split(",").map(Number); return [latitude, longitude]; })).filter((point: number[]) => point.every(Number.isFinite));
+      return Response.json({ route: { distance: Number(path?.distance || 0), duration: Number(path?.duration || 0), geometry } });
+    }
+    return Response.json({ error: "无效操作" }, { status: 400 });
+  } catch (reason) {
+    return Response.json({ error: reason instanceof Error ? reason.message : "高德地图请求失败" }, { status: 502 });
+  }
+}
