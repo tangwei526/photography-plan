@@ -55,6 +55,13 @@ export async function POST(request: Request) {
       const component = data.regeocode?.addressComponent || {};
       return Response.json({ district: text(component.district, 60), city: text(component.city || component.province, 60), formattedAddress: text(data.regeocode?.formatted_address, 200) });
     }
+    if (action === "search") {
+      const query = text(body.query, 120); const district = text(body.district, 60);
+      if (!query) return Response.json({ error: "请输入要搜索的地点" }, { status: 400 });
+      const data = await amap("/v5/place/text", { keywords: query, region: district ? `重庆市${district}` : "重庆市", city_limit: "false", page_size: "8", output: "JSON" });
+      const items = (Array.isArray(data.pois) ? data.pois : []).map((poi: Record<string, unknown>) => { const [longitude, latitude] = text(poi.location, 80).split(",").map(Number); return { name: text(poi.name, 120), address: text(poi.address, 180), district: text(poi.adname || district, 60), longitude, latitude }; }).filter((item: { longitude:number; latitude:number }) => Number.isFinite(item.longitude) && Number.isFinite(item.latitude));
+      return Response.json({ items });
+    }
     if (action === "route") {
       const locations = Array.isArray(body.locations) ? body.locations.slice(0, 8).filter((point: unknown) => Array.isArray(point) && point.length === 2 && point.every(value => Number.isFinite(Number(value)))) : [];
       if (locations.length < 2) return Response.json({ error: "请至少选择两个点位" }, { status: 400 });
