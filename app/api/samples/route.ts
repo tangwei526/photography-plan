@@ -4,7 +4,7 @@ type SampleMeta = {
   taskId: string; district: string; location: string; theme: string; themeCategory: string;
   device: string; shootTime: string;
   stationId: string; stationName: string; stationDescription: string;
-  subjectDescription: string; note: string; originalName: string;
+  subjectDescription: string; note: string; originalName: string; groupId?: string;
 };
 
 const bucket = () => (env as unknown as { SAMPLES: R2Bucket }).SAMPLES;
@@ -140,19 +140,9 @@ export async function PATCH(request: Request) {
   const object = await bucket().get(`samples/${id}`);
   if (!object) return Response.json({ error: "样片不存在" }, { status: 404, headers: cors(request) });
 
-  const metadata = {
-    ...(object.customMetadata || {}),
-    originalName: cleanText(body.originalName, 200),
-    location: cleanText(body.location, 160),
-    themeCategory: cleanText(body.themeCategory, 40),
-    device: cleanText(body.device, 40),
-    shootTime: cleanText(body.shootTime, 40),
-    stationId: cleanText(body.stationId, 80),
-    stationName: cleanText(body.stationName, 160),
-    stationDescription: cleanText(body.stationDescription, 500),
-    subjectDescription: cleanText(body.subjectDescription, 500),
-    note: cleanText(body.note, 500),
-  };
+  const metadata: Record<string,string> = { ...(object.customMetadata || {}) };
+  const fields: [string,number][] = [["originalName",200],["location",160],["themeCategory",40],["device",40],["shootTime",40],["stationId",80],["stationName",160],["stationDescription",500],["subjectDescription",500],["note",500],["groupId",80]];
+  for (const [field,max] of fields) if (body[field] !== undefined) metadata[field] = cleanText(body[field], max);
   await bucket().put(`samples/${id}`, await object.arrayBuffer(), {
     httpMetadata: object.httpMetadata,
     customMetadata: metadata,
