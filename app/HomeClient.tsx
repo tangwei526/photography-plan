@@ -157,7 +157,7 @@ function OverviewStats({pointCount,districtCount,counts,scheduleCount,coordinate
 
 export default function Home(){
   const [tasks,setTasks]=useState<Task[]>(baseTasks); const [hydrated,setHydrated]=useState(false); const [view,setView]=useState<View>("library");
-  const [themeMode,setThemeMode]=useState<"light"|"dark">("light");
+  const [themeMode,setThemeMode]=useState<"light"|"dark">("dark");
   const [district,setDistrict]=useState("全部行政区"); const [status,setStatus]=useState("全部状态"); const [priority,setPriority]=useState("全部优先级"); const [category,setCategory]=useState("全部归类"); const [query,setQuery]=useState("");
   const [expanded,setExpanded]=useState<string|null>(null); const [pointEditOnOpen,setPointEditOnOpen]=useState(false); const [editing,setEditing]=useState<number|null>(null); const [mapTask,setMapTask]=useState<number|null>(null);
   const [routeIds,setRouteIds]=useState<number[]>([]); const [route,setRoute]=useState<RouteInfo|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [amapLocating,setAmapLocating]=useState(false); const amapSyncing=useRef(false);
