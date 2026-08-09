@@ -66,7 +66,7 @@ async function ensureAdmin(){
 const normalizeTask=(t:Task):Task=>({...t,themeCategory:t.themeCategory==="地铁"?"轨道交通":t.themeCategory||inferThemeCategory(t.theme),stations:t.stations||[],samples:t.samples||[],graduationCriteria:t.graduationCriteria||""});
 const baseTasks=(sourceData as unknown as Task[]).map(normalizeTask);
 const split=(v:unknown)=>String(v||"").split(/[，,、;；]/).map(x=>x.trim()).filter(Boolean);
-const n=(v:unknown)=>{const x=Number(v);return Number.isFinite(x)?x:undefined};
+const n=(v:unknown)=>{if(v===""||v===null||v===undefined)return undefined;const x=Number(v);return Number.isFinite(x)?x:undefined};
 const supportedUploadTypes=new Set(["image/jpeg","image/png","image/webp","image/gif","image/avif"]);
 const shootTimes=["日出","日落","日出蓝调","日落蓝调","夜景"];
 const uploadLimitBytes=4*1024*1024;
@@ -126,7 +126,7 @@ export default function Home(){
   useEffect(()=>{if(hydrated)localStorage.setItem("shancheng-photo-tasks-v2",JSON.stringify(tasks))},[tasks,hydrated]);
   useEffect(()=>{(async()=>{try{const response=await fetch("/api/planner",{cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json();setCalendarEvents(Array.isArray(data.events)?data.events:[]);if(Array.isArray(data.themes)&&data.themes.length)setThemeRecords(data.themes)}catch{}})()},[]);
   useEffect(()=>{if(view==="map")locateAllPoints()},[view]);
-  const groups=useMemo(()=>group(tasks),[tasks]); const districts=useMemo(()=>[...new Set(tasks.map(t=>t.district))],[tasks]);
+  const groups=useMemo(()=>group(tasks),[tasks]); const districts=useMemo(()=>[...new Set(tasks.map(t=>t.district))],[tasks]); const activeGroup=groups.find(item=>item.key===expanded);
   const filtered=useMemo(()=>groups.filter(g=>(district==="全部行政区"||g.district===district)&&(status==="全部状态"||g.status===status)&&(priority==="全部优先级"||g.priority===priority)&&(category==="全部归类"||g.tasks.some(t=>(t.themeCategory||"")===category))&&`${g.location} ${g.district} ${g.tasks.map(t=>`${t.themeCategory||"未归类"} ${t.theme} ${t.methods} ${t.note}`).join(" ")}`.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]),[groups,district,status,priority,category,query]);
   const counts={unshot:tasks.filter(t=>t.status==="未拍摄").length,redo:tasks.filter(t=>t.status==="待补拍").length,done:tasks.filter(t=>t.status==="已毕业").length};
   const selected=tasks.find(t=>t.id===(editing??mapTask)); const mappedTasks=tasks;
@@ -144,9 +144,12 @@ export default function Home(){
   async function planRoute(){const pts=routeIds.map(id=>tasks.find(t=>t.id===id)).filter(Boolean) as Task[];if(pts.length<2)return;setRouteLoading(true);try{const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"route",locations:pts.map(task=>{const [latitude,longitude]=task.latitude&&task.longitude?[task.latitude,task.longitude]:coord(task);return[longitude,latitude]})})});const data=await response.json();setRoute(response.ok&&data.route?data.route:null)}catch{setRoute(null)}finally{setRouteLoading(false)}}
   function addStation(id:number){const t=tasks.find(x=>x.id===id);if(!t)return;update(id,{stations:[...(t.stations||[]),{id:crypto.randomUUID(),name:`机位 ${(t.stations?.length||0)+1}`,description:"待勘景"}]})}
   async function addSamples(id:number,files:FileList|null){if(!files)return;const t=tasks.find(x=>x.id===id);if(!t)return;const accepted=[...files].filter(f=>f.size<=1200000).slice(0,6-(t.samples?.length||0));const samples=await Promise.all(accepted.map(f=>new Promise<Sample>(resolve=>{const r=new FileReader();r.onload=()=>resolve({id:crypto.randomUUID(),name:f.name,url:String(r.result)});r.readAsDataURL(f)})));update(id,{samples:[...(t.samples||[]),...samples]})}
-  async function openEditor(id:number){if(await ensureAdmin())setEditing(id)}
+  async function openEditor(id:number){if(await ensureAdmin()){setEditing(id);return true}return false}
   async function changeStatus(t:Task){if(await ensureAdmin())update(t.id,{status:statuses[(statuses.indexOf(t.status)+1)%3]})}
   async function createPoint(){if(!(await ensureAdmin()))return;const id=Math.max(0,...tasks.map(t=>t.id))+1;setTasks([{id,district:districts[0]||"渝中区",location:"新拍摄点位",priority:"低",theme:"常规记录",themeCategory:"",methods:["待规划"],media:["照片"],clarity:"中",status:"未拍摄",note:"",sourceRow:0,stations:[],samples:[]},...tasks]);setEditing(id);setView("library")}
+  async function updatePointGroup(point:ReturnType<typeof group>[number],patch:{location:string;district:string;longitude?:number;latitude?:number}){if(!(await ensureAdmin()))return false;setTasks(items=>items.map(task=>`${task.district}::${task.location}`===point.key?{...task,...patch,coordinateSystem:patch.longitude&&patch.latitude?"gcj02":task.coordinateSystem}:task));setExpanded(`${patch.district}::${patch.location}`);return true}
+  async function addPointTheme(point:ReturnType<typeof group>[number]){if(!(await ensureAdmin()))return;const source=point.tasks[0];const id=Math.max(0,...tasks.map(task=>task.id))+1;const task:Task={id,district:point.district,location:point.location,priority:"低",theme:"新拍摄主题",themeCategory:"",methods:["待规划"],media:["照片"],clarity:"中",status:"未拍摄",note:"",sourceRow:0,longitude:source.longitude,latitude:source.latitude,coordinateSystem:source.coordinateSystem,stations:[],samples:[]};setTasks(items=>[...items,task]);setExpanded(null);setEditing(id)}
+  async function removePointTheme(point:ReturnType<typeof group>[number],task:Task){const message=point.tasks.length===1?"这是该点位的最后一个主题，移除后点位也会被删除。继续吗？":`从该点位移除“${task.theme}”主题？`;if(!confirm(message)||!(await ensureAdmin()))return;setTasks(items=>items.filter(item=>item.id!==task.id));if(point.tasks.length===1)setExpanded(null)}
   async function saveCalendarEvent(item:CalendarEvent,isNew:boolean){if(!(await ensureAdmin()))return false;const response=await fetch("/api/planner",{method:isNew?"POST":"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({kind:"event",...item})});const data=await response.json().catch(()=>({}));if(!response.ok){alert(data.error||"日程保存失败");return false}setCalendarEvents(events=>isNew?[...events,data.item].sort((a,b)=>`${a.eventDate}${a.startTime}`.localeCompare(`${b.eventDate}${b.startTime}`)):events.map(event=>event.id===item.id?{...event,...data.item}:event));return true}
   async function removeCalendarEvent(id:string){if(!(await ensureAdmin())||!confirm("删除这条拍摄日程？"))return false;const response=await fetch(`/api/planner?kind=event&id=${encodeURIComponent(id)}`,{method:"DELETE"});if(!response.ok){alert("日程删除失败");return false}setCalendarEvents(events=>events.filter(event=>event.id!==id));return true}
   async function addTheme(){const name=prompt("新拍摄主题名称")?.trim();if(!name||!(await ensureAdmin()))return;const response=await fetch("/api/planner",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({kind:"theme",name})});const data=await response.json().catch(()=>({}));if(!response.ok){alert(data.error||"主题新增失败");return}setThemeRecords(records=>[...records,data.item])}
@@ -258,11 +261,11 @@ export default function Home(){
 </div>
 <div className="listHead">
 <span>显示 {filtered.length} 个点位</span>
-<small>按优先级排序 · 点击展开主题任务</small>
+<small>按优先级排序 · 点击卡片查看点位与关联主题</small>
 </div>
 <div className="spotList">{filtered.map(g=>
-<article className={`locationCard ${expanded===g.key?"open":""}`} key={g.key}>
-<button className="locationSummary" onClick={()=>setExpanded(expanded===g.key?null:g.key)}>
+<article className="locationCard" key={g.key}>
+<button className="locationSummary" onClick={()=>setExpanded(g.key)}>
 <span className={`priorityBadge priority-${g.priority}`}>{g.priority}</span>
 <div className="locationName">
 <div>
@@ -279,34 +282,12 @@ export default function Home(){
 </div>
 </div>
 <span className={`status status-${g.status}`}>{g.status}</span>
-<span className="chevron">⌄</span>
-</button>{expanded===g.key&&<div className="taskPanel">{g.tasks.map(t=>
-<div className="taskRow" key={t.id}>
-<div className="themeCell">
-<small>拍摄主题 · {t.themeCategory||"未归类"}</small>
-<strong>{t.theme}</strong>
-<p className="micro">{t.scheduleDate?`计划 ${t.scheduleDate} ${t.scheduleSlot||""}`:"尚未排期"}</p>
-</div>
-<div>
-<small>拍摄方式</small>
-<div className="tags">{t.methods.map(x=>
-<span key={x}>{x}</span>)}</div>
-</div>
-<div>
-<small>机位 / 素材</small>
-<div className="tags">
-<span>{t.stations?.length||0} 个机位</span>
-<span>{t.samples?.length||0} 张样片</span>
-<span>通透度 {t.clarity}</span>
-</div>
-</div>
-<div className="taskStatus">
-<button className={`status status-${t.status}`} onClick={()=>changeStatus(t)}>{t.status} ↻</button>
-<button className="manage" onClick={()=>openEditor(t.id)}>管理 →</button>
-</div>
-</div>)}</div>}</article>)}</div>
+<span className="chevron">↗</span>
+</button></article>)}</div>
 </div>
 </section>}
+
+  {view==="library"&&activeGroup&&<PointDetailModal key={activeGroup.key} point={activeGroup} districts={districts} onClose={()=>setExpanded(null)} onSave={patch=>updatePointGroup(activeGroup,patch)} onAddTheme={()=>addPointTheme(activeGroup)} onManageTheme={async id=>{if(await openEditor(id))setExpanded(null)}} onRemoveTheme={task=>removePointTheme(activeGroup,task)} onChangeStatus={changeStatus}/>}
 
   {view==="gallery"&&<Gallery tasks={tasks} categories={themeCategories} onEdit={async id=>{if(await ensureAdmin()){setEditing(id);setView("library")}}}/>}
 
@@ -354,6 +335,28 @@ export default function Home(){
   {view==="themes"&&<ThemeManager records={themeRecords} tasks={tasks} onAdd={addTheme} onRename={renameTheme} onDelete={removeTheme} onOpen={name=>{setCategory(name);setView("library")}} onEdit={openEditor}/>}
   {view==="coverage"&&<Coverage tasks={tasks} categories={themeCategories}/>}
   </div>{editing!==null&&selected&&<Editor task={selected} categories={themeCategories} update={p=>update(selected.id,p)} close={()=>setEditing(null)} addStation={()=>addStation(selected.id)} addSamples={f=>addSamples(selected.id,f)}/>}</main>
+}
+
+function PointDetailModal({point,districts,onClose,onSave,onAddTheme,onManageTheme,onRemoveTheme,onChangeStatus}:{point:ReturnType<typeof group>[number];districts:string[];onClose:()=>void;onSave:(patch:{location:string;district:string;longitude?:number;latitude?:number})=>Promise<boolean>;onAddTheme:()=>void;onManageTheme:(id:number)=>void;onRemoveTheme:(task:Task)=>void;onChangeStatus:(task:Task)=>void}){
+  const source=point.tasks[0];const [editingPoint,setEditingPoint]=useState(false);const [saving,setSaving]=useState(false);const [draft,setDraft]=useState({location:point.location,district:point.district,longitude:source.longitude?String(source.longitude):"",latitude:source.latitude?String(source.latitude):""});
+  async function save(){if(!draft.location.trim())return;setSaving(true);if(await onSave({location:draft.location.trim(),district:draft.district,longitude:n(draft.longitude),latitude:n(draft.latitude)}))setEditingPoint(false);setSaving(false)}
+  return <div className="modal pointModal" onClick={onClose}><div className="pointDialog" onClick={event=>event.stopPropagation()}>
+<div className="modalHead"><div><small>LOCATION DETAIL</small><h2>{point.location}</h2><p>{point.district} · {point.tasks.length} 个关联主题</p></div><button onClick={onClose}>×</button></div>
+{editingPoint?<div className="pointEditGrid">
+<label>点位名称<input value={draft.location} onChange={event=>setDraft({...draft,location:event.target.value})}/></label>
+<label>行政区域<select value={draft.district} onChange={event=>setDraft({...draft,district:event.target.value})}>{districts.map(name=><option key={name}>{name}</option>)}</select></label>
+<label>高德经度<input type="number" step="0.000001" value={draft.longitude} onChange={event=>setDraft({...draft,longitude:event.target.value})}/></label>
+<label>高德纬度<input type="number" step="0.000001" value={draft.latitude} onChange={event=>setDraft({...draft,latitude:event.target.value})}/></label>
+<div className="pointEditActions"><button onClick={()=>setEditingPoint(false)}>取消</button><button className="primary" disabled={saving} onClick={save}>{saving?"正在保存…":"保存点位"}</button></div>
+</div>:<div className="pointOverview"><div><small>拍摄进度</small><strong>{point.tasks.filter(task=>task.status==="已毕业").length} / {point.tasks.length}</strong></div><div><small>点位优先级</small><strong>{point.priority}</strong></div><div><small>经纬度</small><strong>{source.longitude&&source.latitude?`${source.longitude.toFixed(5)}, ${source.latitude.toFixed(5)}`:"待定位"}</strong></div><button onClick={()=>setEditingPoint(true)}>编辑点位信息</button></div>}
+<div className="pointThemeHead"><div><h3>关联拍摄主题</h3><p>一个点位可以同时管理多个拍摄主题、机位和样片。</p></div><button className="primary" onClick={onAddTheme}>＋ 关联新主题</button></div>
+<div className="pointThemeList">{point.tasks.map(task=><article key={task.id}>
+<div className="pointThemeTitle"><div><span>{task.themeCategory||"未归类"}</span><h4>{task.theme}</h4></div><button className={`status status-${task.status}`} onClick={()=>onChangeStatus(task)}>{task.status} ↻</button></div>
+<div className="pointThemeMeta"><span>优先级 {task.priority}</span><span>{task.stations?.length||0} 个机位</span><span>{task.samples?.length||0} 张样片</span><span>通透度 {task.clarity}</span></div>
+<p>{task.methods.join("、")} · {task.media.join("、")}{task.scheduleDate?` · ${task.scheduleDate} ${task.scheduleSlot||""}`:""}</p>
+<div className="pointThemeActions"><button onClick={()=>onRemoveTheme(task)}>移除主题</button><button onClick={()=>onManageTheme(task.id)}>查看并编辑 →</button></div>
+</article>)}</div>
+</div></div>
 }
 
 function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onEdit:(id:number)=>void}){
