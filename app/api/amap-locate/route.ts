@@ -48,6 +48,13 @@ export async function POST(request: Request) {
       const locations = String(data.locations || "").split(";");
       return Response.json({ items: valid.map((item: Record<string, unknown>, index: number) => { const [longitude, latitude] = String(locations[index] || "").split(",").map(Number); return { key: text(item.key, 260), longitude, latitude }; }) });
     }
+    if (action === "reverse") {
+      const longitude = Number(body.longitude); const latitude = Number(body.latitude);
+      if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return Response.json({ error: "无效地图坐标" }, { status: 400 });
+      const data = await amap("/v3/geocode/regeo", { location: `${longitude.toFixed(6)},${latitude.toFixed(6)}`, radius: "1000", extensions: "base", output: "JSON" });
+      const component = data.regeocode?.addressComponent || {};
+      return Response.json({ district: text(component.district, 60), city: text(component.city || component.province, 60), formattedAddress: text(data.regeocode?.formatted_address, 200) });
+    }
     if (action === "route") {
       const locations = Array.isArray(body.locations) ? body.locations.slice(0, 8).filter((point: unknown) => Array.isArray(point) && point.length === 2 && point.every(value => Number.isFinite(Number(value)))) : [];
       if (locations.length < 2) return Response.json({ error: "请至少选择两个点位" }, { status: 400 });

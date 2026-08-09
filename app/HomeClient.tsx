@@ -30,6 +30,7 @@ const districtCenters:Record<string,[number,number]> = {
   渝中区:[106.555,29.557], 江北区:[106.574,29.606], 南岸区:[106.620,29.522], 沙坪坝区:[106.455,29.555],
   九龙坡区:[106.505,29.503], 大渡口区:[106.482,29.476], 渝北区:[106.630,29.718], 巴南区:[106.540,29.402]
 };
+const chongqingDistricts=["渝中区","江北区","南岸区","沙坪坝区","九龙坡区","大渡口区","渝北区","巴南区","北碚区","綦江区","大足区","璧山区","铜梁区","潼南区","荣昌区","开州区","梁平区","武隆区","万州区","涪陵区","黔江区","长寿区","江津区","合川区","永川区","南川区","城口县","丰都县","垫江县","忠县","云阳县","奉节县","巫山县","巫溪县","石柱土家族自治县","秀山土家族苗族自治县","酉阳土家族苗族自治县","彭水苗族土家族自治县"];
 const priorityRank:Record<Priority,number>={高:3,中:2,低:1};
 const statuses:Status[]=["未拍摄","待补拍","已毕业"];
 const defaultThemeCategories:ThemeCategory[]=["雨天","朝霞","晚霞","日月对齐","轨道交通","桥梁","寺庙","彩虹","雷电","立交"];
@@ -112,6 +113,14 @@ const group=(tasks:Task[])=>[...new Map(tasks.map(t=>[`${t.district}::${t.locati
   return {key,district:items[0].district,location:items[0].location,tasks:items,status:state,priority:[...items].sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority])[0].priority};
 });
 
+function PointMapPicker({longitude,latitude,onPick}:{longitude?:number;latitude?:number;onPick:(value:{longitude:number;latitude:number;district?:string})=>void}){
+  const el=useRef<HTMLDivElement>(null);const map=useRef<any>(null);const marker=useRef<any>(null);const onPickRef=useRef(onPick);const [ready,setReady]=useState(false);const [message,setMessage]=useState("点击地图选择点位");
+  onPickRef.current=onPick;
+  useEffect(()=>{let active=true;(async()=>{try{const AMap=await loadAMap();if(!active||!el.current)return;const center=longitude&&latitude?[longitude,latitude]:[106.551,29.563];map.current=new AMap.Map(el.current,{viewMode:"2D",zoom:longitude&&latitude?16:12,center});map.current.addControl(new AMap.Scale());map.current.on("click",async(event:any)=>{const point={longitude:Number(event.lnglat.getLng()),latitude:Number(event.lnglat.getLat())};if(marker.current)marker.current.setPosition([point.longitude,point.latitude]);else{marker.current=new AMap.Marker({position:[point.longitude,point.latitude],anchor:"bottom-center"});map.current.add(marker.current)}onPickRef.current(point);setMessage("正在识别行政区域…");try{const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"reverse",...point})});const data=await response.json();if(response.ok){onPickRef.current({...point,district:data.district||undefined});setMessage(data.formattedAddress||"已关联地图坐标")}else setMessage(data.error||"坐标已选择，区域识别失败")}catch{setMessage("坐标已选择，区域识别失败")}});setReady(true)}catch{if(active)setMessage("地图暂时无法加载，请手动填写经纬度")}})();return()=>{active=false;map.current?.destroy();map.current=null;marker.current=null}},[]);
+  useEffect(()=>{if(!ready||!map.current||!longitude||!latitude)return;const AMap=(window as any).AMap;if(marker.current)marker.current.setPosition([longitude,latitude]);else{marker.current=new AMap.Marker({position:[longitude,latitude],anchor:"bottom-center"});map.current.add(marker.current)}map.current.setZoomAndCenter(16,[longitude,latitude])},[ready,longitude,latitude]);
+  return <div className="pointMapField"><div ref={el} className="pointMapPicker"/><div className="pointMapHint"><span>⌖</span><strong>{message}</strong><small>{longitude&&latitude?`${longitude.toFixed(6)}, ${latitude.toFixed(6)}`:"选择后自动填写经纬度与行政区域"}</small></div></div>
+}
+
 function MapCanvas({tasks,route,onPick}:{tasks:Task[];route:RouteInfo|null;onPick:(t:Task)=>void}){
   const el=useRef<HTMLDivElement>(null);const map=useRef<any>(null);const defaultViewSet=useRef(false);const [ready,setReady]=useState(false);const [mapError,setMapError]=useState("");
   useEffect(()=>{let active=true;(async()=>{try{const AMap=await loadAMap();if(!active||!el.current)return;map.current=new AMap.Map(el.current,{viewMode:"3D",zoom:13,center:[106.551,29.563],mapStyle:"amap://styles/normal"});map.current.addControl(new AMap.Scale());map.current.addControl(new AMap.ToolBar({position:{top:"16px",right:"16px"}}));setReady(true)}catch(reason){if(active)setMapError(reason instanceof Error?reason.message:"高德地图加载失败")}})();return()=>{active=false;map.current?.destroy();map.current=null}},[]);
@@ -161,7 +170,7 @@ export default function Home(){
   useEffect(()=>{if(hydrated)localStorage.setItem("shancheng-photo-tasks-v2",JSON.stringify(tasks))},[tasks,hydrated]);
   useEffect(()=>{(async()=>{try{const response=await fetch("/api/planner",{cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json();setCalendarEvents(Array.isArray(data.events)?data.events:[]);if(Array.isArray(data.themes)&&data.themes.length)setThemeRecords(data.themes)}catch{}})()},[]);
   useEffect(()=>{if(view==="map")locateAllPoints()},[view]);
-  const groups=useMemo(()=>group(tasks),[tasks]); const districts=useMemo(()=>[...new Set(tasks.map(t=>t.district))],[tasks]); const activeGroup=groups.find(item=>item.key===expanded);
+  const groups=useMemo(()=>group(tasks),[tasks]); const districts=useMemo(()=>[...new Set(tasks.map(t=>t.district))],[tasks]); const availableDistricts=useMemo(()=>[...new Set([...chongqingDistricts,...districts])],[districts]); const activeGroup=groups.find(item=>item.key===expanded);
   const filtered=useMemo(()=>groups.filter(g=>(district==="全部行政区"||g.district===district)&&(status==="全部状态"||g.status===status)&&(priority==="全部优先级"||g.priority===priority)&&(category==="全部归类"||g.tasks.some(t=>(t.themeCategory||"")===category))&&`${g.location} ${g.district} ${g.tasks.map(t=>`${t.themeCategory||"未归类"} ${t.theme} ${t.methods} ${t.note}`).join(" ")}`.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]),[groups,district,status,priority,category,query]);
   const counts={unshot:tasks.filter(t=>t.status==="未拍摄").length,redo:tasks.filter(t=>t.status==="待补拍").length,done:tasks.filter(t=>t.status==="已毕业").length};
   const selected=tasks.find(t=>t.id===(editing??mapTask)); const mappedTasks=tasks;
@@ -181,7 +190,7 @@ export default function Home(){
   async function addSamples(id:number,files:FileList|null){if(!files)return;const t=tasks.find(x=>x.id===id);if(!t)return;const accepted=[...files].filter(f=>f.size<=1200000).slice(0,6-(t.samples?.length||0));const samples=await Promise.all(accepted.map(f=>new Promise<Sample>(resolve=>{const r=new FileReader();r.onload=()=>resolve({id:crypto.randomUUID(),name:f.name,url:String(r.result)});r.readAsDataURL(f)})));update(id,{samples:[...(t.samples||[]),...samples]})}
   async function openEditor(id:number){if(await ensureAdmin()){setEditing(id);return true}return false}
   async function changeStatus(t:Task){if(await ensureAdmin())update(t.id,{status:statuses[(statuses.indexOf(t.status)+1)%3]})}
-  async function createPoint(){if(!(await ensureAdmin()))return;const id=Math.max(0,...tasks.map(t=>t.id))+1;setTasks([{id,district:districts[0]||"渝中区",location:"新拍摄点位",priority:"低",theme:"常规记录",themeCategory:"",methods:["待规划"],media:["照片"],clarity:"中",status:"未拍摄",note:"",sourceRow:0,stations:[],samples:[]},...tasks]);setEditing(id);setView("library")}
+  async function createPoint(){if(!(await ensureAdmin()))return;const id=Math.max(0,...tasks.map(t=>t.id))+1;const initialDistrict=district!=="全部行政区"?district:"渝中区";const location=`新拍摄点位 ${id}`;setTasks([{id,district:initialDistrict,location,priority:"低",theme:"常规记录",themeCategory:"",methods:["待规划"],media:["照片"],clarity:"中",status:"未拍摄",note:"",sourceRow:0,stations:[],samples:[]},...tasks]);setExpanded(`${initialDistrict}::${location}`);setPointEditOnOpen(true);setView("library")}
   async function updatePointGroup(point:ReturnType<typeof group>[number],patch:{location:string;district:string;longitude?:number;latitude?:number}){if(!(await ensureAdmin()))return false;setTasks(items=>items.map(task=>`${task.district}::${task.location}`===point.key?{...task,...patch,coordinateSystem:patch.longitude&&patch.latitude?"gcj02":task.coordinateSystem}:task));setPointEditOnOpen(false);setExpanded(`${patch.district}::${patch.location}`);return true}
   async function removePointGroup(point:ReturnType<typeof group>[number]){if(!confirm(`删除“${point.location}”点位及其 ${point.tasks.length} 个关联主题？此操作无法撤销。`)||!(await ensureAdmin()))return;setTasks(items=>items.filter(task=>`${task.district}::${task.location}`!==point.key));if(expanded===point.key)setExpanded(null)}
   async function addPointThemes(point:ReturnType<typeof group>[number],names:string[]){if(!names.length||!(await ensureAdmin()))return false;const source=point.tasks[0];setTasks(items=>{let nextId=Math.max(0,...items.map(task=>task.id))+1;const existing=new Set(point.tasks.map(task=>task.themeCategory||task.theme));const additions=names.filter(name=>!existing.has(name)).map(name=>({id:nextId++,district:point.district,location:point.location,priority:"低" as Priority,theme:name,themeCategory:name,methods:["待规划"],media:["照片"],clarity:"中",status:"未拍摄" as Status,note:"",sourceRow:0,longitude:source.longitude,latitude:source.latitude,coordinateSystem:source.coordinateSystem,stations:[],samples:[]}));return [...items,...additions]});return true}
@@ -287,7 +296,7 @@ export default function Home(){
 </div>
 </section>}
 
-  {view==="library"&&activeGroup&&<PointDetailModal key={`${activeGroup.key}-${pointEditOnOpen?"edit":"view"}`} point={activeGroup} initialEditing={pointEditOnOpen} districts={districts} categories={themeCategories} onClose={()=>{setExpanded(null);setPointEditOnOpen(false)}} onSave={patch=>updatePointGroup(activeGroup,patch)} onAddThemes={names=>addPointThemes(activeGroup,names)} onManageTheme={async id=>{if(await openEditor(id))setExpanded(null)}} onRemoveTheme={task=>removePointTheme(activeGroup,task)} onChangeStatus={changeStatus}/>}
+  {view==="library"&&activeGroup&&<PointDetailModal key={`${activeGroup.key}-${pointEditOnOpen?"edit":"view"}`} point={activeGroup} initialEditing={pointEditOnOpen} districts={availableDistricts} categories={themeCategories} onClose={()=>{setExpanded(null);setPointEditOnOpen(false)}} onSave={patch=>updatePointGroup(activeGroup,patch)} onAddThemes={names=>addPointThemes(activeGroup,names)} onManageTheme={async id=>{if(await openEditor(id))setExpanded(null)}} onRemoveTheme={task=>removePointTheme(activeGroup,task)} onChangeStatus={changeStatus}/>}
 
   {view==="gallery"&&<Gallery tasks={tasks} categories={themeCategories} onEdit={async id=>{if(await ensureAdmin()){setEditing(id);setView("library")}}}/>}
 
@@ -334,7 +343,7 @@ export default function Home(){
   {view==="calendar"&&<Calendar month={month} setMonth={setMonth} events={calendarEvents} onSave={saveCalendarEvent} onDelete={removeCalendarEvent} onSync={()=>subscribeAppleCalendar(true)}/>}
   {view==="themes"&&<ThemeManager records={themeRecords} tasks={tasks} onAdd={addTheme} onRename={renameTheme} onDelete={removeTheme} onOpen={name=>{setCategory(name);setView("library")}} onEdit={openEditor}/>}
   {view==="coverage"&&<Coverage tasks={tasks} categories={themeCategories}/>}
-  </div>{editing!==null&&selected&&<Editor task={selected} categories={themeCategories} update={p=>update(selected.id,p)} close={()=>setEditing(null)} addStation={()=>addStation(selected.id)} addSamples={f=>addSamples(selected.id,f)}/>}</main>
+  </div>{editing!==null&&selected&&<Editor task={selected} categories={themeCategories} districts={availableDistricts} update={p=>update(selected.id,p)} close={()=>setEditing(null)} addStation={()=>addStation(selected.id)} addSamples={f=>addSamples(selected.id,f)}/>}</main>
 }
 
 function PointDetailModal({point,initialEditing,districts,categories,onClose,onSave,onAddThemes,onManageTheme,onRemoveTheme,onChangeStatus}:{point:ReturnType<typeof group>[number];initialEditing?:boolean;districts:string[];categories:string[];onClose:()=>void;onSave:(patch:{location:string;district:string;longitude?:number;latitude?:number})=>Promise<boolean>;onAddThemes:(names:string[])=>Promise<boolean>;onManageTheme:(id:number)=>void;onRemoveTheme:(task:Task)=>void;onChangeStatus:(task:Task)=>void}){
@@ -349,6 +358,7 @@ function PointDetailModal({point,initialEditing,districts,categories,onClose,onS
 <label>行政区域<select value={draft.district} onChange={event=>setDraft({...draft,district:event.target.value})}>{districts.map(name=><option key={name}>{name}</option>)}</select></label>
 <label>高德经度<input type="number" step="0.000001" value={draft.longitude} onChange={event=>setDraft({...draft,longitude:event.target.value})}/></label>
 <label>高德纬度<input type="number" step="0.000001" value={draft.latitude} onChange={event=>setDraft({...draft,latitude:event.target.value})}/></label>
+<PointMapPicker longitude={n(draft.longitude)} latitude={n(draft.latitude)} onPick={value=>setDraft(current=>({...current,longitude:String(value.longitude),latitude:String(value.latitude),district:value.district&&districts.includes(value.district)?value.district:current.district}))}/>
 <div className="pointEditActions"><button onClick={()=>setEditingPoint(false)}>取消</button><button className="primary" disabled={saving} onClick={save}>{saving?"正在保存…":"保存点位"}</button></div>
 </div>:<div className="pointOverview"><div><small>拍摄进度</small><strong>{point.tasks.filter(task=>task.status==="已毕业").length} / {point.tasks.length}</strong></div><div><small>点位优先级</small><strong>{point.priority}</strong></div><div><small>经纬度</small><strong>{source.longitude&&source.latitude?`${source.longitude.toFixed(5)}, ${source.latitude.toFixed(5)}`:"待定位"}</strong></div><button onClick={()=>setEditingPoint(true)}>编辑点位信息</button></div>}
 <div className="pointThemeHead"><div><h3>关联拍摄主题</h3><p>一个点位可以同时管理多个拍摄主题、机位和样片。</p></div><div className="themePickerWrap"><button className="primary" onClick={()=>setThemePickerOpen(open=>!open)}>＋ 关联新主题</button>{themePickerOpen&&<div className="themePickerDropdown">
@@ -702,7 +712,7 @@ function Bar({name,total,done}:{name:string;total:number;done:number}){const p=M
 <small>{done} / {total}</small>
 </div>}
 
-function Editor({task,categories,update,close,addStation,addSamples}:{task:Task;categories:string[];update:(p:Partial<Task>)=>void;close:()=>void;addStation:()=>void;addSamples:(f:FileList|null)=>void}){return <div className="modal editorModal">
+function Editor({task,categories,districts,update,close,addStation,addSamples}:{task:Task;categories:string[];districts:string[];update:(p:Partial<Task>)=>void;close:()=>void;addStation:()=>void;addSamples:(f:FileList|null)=>void}){return <div className="modal editorModal">
 <div className="editor">
 <div className="modalHead">
 <div>
@@ -715,6 +725,8 @@ function Editor({task,categories,update,close,addStation,addSamples}:{task:Task;
 <div className="editGrid">
 <label>点位名称<input value={task.location} onChange={e=>update({location:e.target.value})}/>
 </label>
+<label>行政区域<select value={task.district} onChange={e=>update({district:e.target.value})}>{districts.map(name=><option key={name}>{name}</option>)}</select>
+</label>
 <label>拍摄主题<input value={task.theme} onChange={e=>update({theme:e.target.value})}/>
 </label>
 <label>主题归类<select value={task.themeCategory||""} onChange={e=>update({themeCategory:e.target.value})}>
@@ -725,6 +737,7 @@ function Editor({task,categories,update,close,addStation,addSamples}:{task:Task;
 </label>
 <label>高德纬度<input type="number" step="0.000001" value={task.latitude||""} placeholder="29.563" onChange={e=>update({latitude:n(e.target.value),coordinateSystem:"gcj02"})}/>
 </label>
+<PointMapPicker longitude={task.longitude} latitude={task.latitude} onPick={value=>update({longitude:value.longitude,latitude:value.latitude,district:value.district&&districts.includes(value.district)?value.district:task.district,coordinateSystem:"gcj02"})}/>
 <label>计划日期<input type="date" value={task.scheduleDate||""} onChange={e=>update({scheduleDate:e.target.value})}/>
 </label>
 <label>计划时段<input value={task.scheduleSlot||""} placeholder="17:30-20:00" onChange={e=>update({scheduleSlot:e.target.value})}/>
