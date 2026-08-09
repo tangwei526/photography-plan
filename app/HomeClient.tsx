@@ -24,6 +24,7 @@ type Task = {
 };
 type WeatherDay = { date:string; sunrise:string; sunset:string; cloud:number; visibility:number; code:number };
 type RouteInfo = { distance:number; duration:number; geometry:[number,number][] };
+type AstronomyData = { date:string; sunrise:string; sunset:string; dawn:string; dusk:string; moonrise:string; moonset:string; moonPhase:number; moonIllumination:number; source?:string };
 
 const districtCenters:Record<string,[number,number]> = {
   渝中区:[106.555,29.557], 江北区:[106.574,29.606], 南岸区:[106.620,29.522], 沙坪坝区:[106.455,29.555],
@@ -64,6 +65,13 @@ async function ensureAdmin(){
   return false;
 }
 const normalizeTask=(t:Task):Task=>({...t,themeCategory:t.themeCategory==="地铁"?"轨道交通":t.themeCategory||inferThemeCategory(t.theme),stations:t.stations||[],samples:t.samples||[],graduationCriteria:t.graduationCriteria||""});
+const normalizeThemeName=(value:string)=>String(value||"").trim().replace(/^地铁$/,"轨道交通").replace(/^大桥$/,"桥梁").replace(/^立交桥$/,"立交").replace(/^太阳月亮同框$/,"日月对齐");
+const matchesTheme=(task:Task,name:string)=>{const target=normalizeThemeName(name);return normalizeThemeName(task.themeCategory||inferThemeCategory(task.theme))===target||normalizeThemeName(task.theme)===target};
+const themeCounts=(items:Task[])=>{
+  const points=new Set(items.map(task=>`${task.district.trim()}::${task.location.trim()}`));
+  const stations=new Set(items.flatMap(task=>(task.stations||[]).filter(station=>station.name.trim()).map(station=>station.id?`id:${station.id}`:`${task.district.trim()}::${task.location.trim()}::${station.name.trim()}`)));
+  return {pointCount:points.size,stationCount:stations.size};
+};
 const baseTasks=(sourceData as unknown as Task[]).map(normalizeTask);
 const split=(v:unknown)=>String(v||"").split(/[，,、;；]/).map(x=>x.trim()).filter(Boolean);
 const n=(v:unknown)=>{if(v===""||v===null||v===undefined)return undefined;const x=Number(v);return Number.isFinite(x)?x:undefined};
@@ -109,6 +117,24 @@ function MapCanvas({tasks,route,onPick}:{tasks:Task[];route:RouteInfo|null;onPic
   useEffect(()=>{let active=true;(async()=>{try{const AMap=await loadAMap();if(!active||!el.current)return;map.current=new AMap.Map(el.current,{viewMode:"3D",zoom:13,center:[106.551,29.563],mapStyle:"amap://styles/normal"});map.current.addControl(new AMap.Scale());map.current.addControl(new AMap.ToolBar({position:{top:"16px",right:"16px"}}));setReady(true)}catch(reason){if(active)setMapError(reason instanceof Error?reason.message:"高德地图加载失败")}})();return()=>{active=false;map.current?.destroy();map.current=null}},[]);
   useEffect(()=>{if(!ready||!map.current)return;const AMap=(window as any).AMap;map.current.clearMap();tasks.forEach(t=>{const [lat,lng]=t.latitude&&t.longitude?[t.latitude,t.longitude]:coord(t);const color=t.status==="已毕业"?"#3e7b61":t.status==="待补拍"?"#d99434":"#e86632";const marker=new AMap.Marker({position:[lng,lat],anchor:"center",title:`${t.location} · ${t.theme}`,content:`<span class="amapSpot" style="--marker:${color}"></span>`});marker.on("click",()=>onPick(t));map.current.add(marker)});if(route?.geometry.length){const line=new AMap.Polyline({path:route.geometry.map(([lat,lng])=>[lng,lat]),strokeColor:"#e86632",strokeWeight:5,strokeOpacity:.9,showDir:true});map.current.add(line);map.current.setFitView([line],false,[45,45,45,45],13)}else if(!defaultViewSet.current){map.current.setZoomAndCenter(13,[106.551,29.563]);defaultViewSet.current=true}},[tasks,route,onPick,ready]);
   return <div ref={el} className="realMap">{mapError&&<div className="mapLoadError">{mapError}</div>}</div>;
+}
+
+const astronomyApi=typeof window!=="undefined"&&window.location.hostname.endsWith("github.io")?"https://shancheng-photo-atlas.ahaclassmate.chatgpt.site/api/astronomy":"/api/astronomy";
+const moonLabel=(phase:number)=>phase<22.5||phase>=337.5?"新月":phase<67.5?"蛾眉月":phase<112.5?"上弦月":phase<157.5?"盈凸月":phase<202.5?"满月":phase<247.5?"亏凸月":phase<292.5?"下弦月":"残月";
+const moonSymbol=(phase:number)=>phase<22.5||phase>=337.5?"🌑":phase<67.5?"🌒":phase<112.5?"🌓":phase<157.5?"🌔":phase<202.5?"🌕":phase<247.5?"🌖":phase<292.5?"🌗":"🌘";
+const lunarDate=(date:Date)=>{try{return new Intl.DateTimeFormat("zh-CN-u-ca-chinese",{month:"long",day:"numeric"}).format(date).replace(/\s/g,"")}catch{return "农历日期暂不可用"}};
+function AstronomyHero(){
+  const [now,setNow]=useState(()=>new Date());const [data,setData]=useState<AstronomyData|null>(null);const [failed,setFailed]=useState(false);
+  const dateKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+  useEffect(()=>{const timer=window.setInterval(()=>setNow(new Date()),1000);return()=>window.clearInterval(timer)},[]);
+  useEffect(()=>{let active=true;setFailed(false);fetch(`${astronomyApi}?date=${dateKey}`).then(response=>{if(!response.ok)throw new Error();return response.json()}).then(value=>{if(active)setData(value)}).catch(()=>{if(active)setFailed(true)});return()=>{active=false}},[dateKey]);
+  const phase=data?.moonPhase??0;const events=[{label:"月出",time:data?.moonrise,color:"moon"},{label:"晨间蓝调",time:data?.dawn,color:"blue"},{label:"日出",time:data?.sunrise,color:"sun"},{label:"月落",time:data?.moonset,color:"moon"},{label:"日落",time:data?.sunset,color:"sun"},{label:"晚间蓝调",time:data?.dusk,color:"blue"}];
+  return <section className="astronomyHero" aria-label="今日天象与拍摄时间窗口">
+    <div className="astroLead"><span className="astroLocation">重庆市 · 今日光线窗口</span><strong>{now.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}</strong><p>{now.toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</p><small>{lunarDate(now)}</small></div>
+    <div className="astroMoon"><span className="moonGlyph" aria-hidden="true">{moonSymbol(phase)}</span><div><strong>{Math.round(data?.moonIllumination??0)}%</strong><span>{moonLabel(phase)}</span></div></div>
+    <div className="astroTimeline">{events.map(event=><div className={`astroEvent astro-${event.color}`} key={event.label}><i/><small>{event.label}</small><strong>{event.time||"--:--"}</strong></div>)}</div>
+    <div className="astroFoot"><span>● 太阳轨迹</span><span>● 月亮轨迹</span>{failed&&<em>天象数据暂未更新，稍后将自动重试</em>}</div>
+  </section>
 }
 
 export default function Home(){
@@ -179,6 +205,7 @@ export default function Home(){
 </div>
   </header>
   <div className={view==="gallery"?"shell galleryShell":"shell"}>
+{view==="library"&&<AstronomyHero/>}
 {view!=="gallery"&&<><section className="intro">
 <div>
 <p className="eyebrow">CHONGQING PHOTO ATLAS · WORKSPACE</p>
@@ -643,14 +670,14 @@ function Calendar({month,setMonth,events,onSave,onDelete,onSync}:{month:string;s
 
 const themeIcon=(name:string)=>{const icons:Record<string,string>={彩虹:"rainbow.png",朝霞:"dawn.png",晚霞:"sunset.png",寺庙:"temple.png",日月对齐:"sun-moon.png",太阳月亮同框:"sun-moon.png",桥梁:"bridge.png",大桥:"bridge.png",立交:"interchange.png",立交桥:"interchange.png",雷电:"lightning.png",雨天:"rain.png",轨道交通:"transit.png",地铁:"transit.png",星空:"starry.png",星空摄影:"starry.png",老街:"old-street.png",老街巷:"old-street.png",长江索道:"cableway.png",索道:"cableway.png",字母:"letters.png",数字:"numbers.png"};return icons[name]?`${assetBase}theme-icons/${icons[name]}`:""};
 function ThemeManager({records,tasks,onAdd,onRename,onDelete,onOpen,onEdit}:{records:ThemeRecord[];tasks:Task[];onAdd:()=>void;onRename:(record:ThemeRecord)=>void;onDelete:(record:ThemeRecord)=>void;onOpen:(name:string)=>void;onEdit:(id:number)=>void}){
-  const [activeId,setActiveId]=useState<string|null>(null);const active=records.find(record=>record.id===activeId);const related=active?tasks.filter(task=>task.themeCategory===active.name):[];
+  const [activeId,setActiveId]=useState<string|null>(null);const active=records.find(record=>record.id===activeId);const related=active?tasks.filter(task=>matchesTheme(task,active.name)):[];const activeCounts=themeCounts(related);
   return <><section className="themeManager">
 <div className="themeManagerHead"><div><p className="eyebrow">THEME COLLECTION</p><h2>拍摄主题</h2><p>用图标快速找到天气、天象与城市题材；点击卡片查看主题下的全部点位和机位。</p></div><button className="primary" onClick={onAdd}>＋ 新增拍摄主题</button></div>
-<div className="themeGrid">{records.map(record=>{const items=tasks.filter(task=>task.themeCategory===record.name);const stationCount=items.reduce((sum,task)=>sum+(task.stations?.length||0),0);const icon=themeIcon(record.name);return <article className="themeCard" key={record.id}>
+<div className="themeGrid">{records.map(record=>{const items=tasks.filter(task=>matchesTheme(task,record.name));const {stationCount}=themeCounts(items);const icon=themeIcon(record.name);return <article className="themeCard" key={record.id}>
 <button className="themeCardOpen" onClick={()=>setActiveId(record.id)}><span className="themeCardIcon">{icon?<img src={icon} alt=""/>:<b>{record.name.slice(0,1)}</b>}</span><span className="themeCardCopy"><strong>{record.name}</strong><em>{stationCount} 个关联机位</em></span><span className="themeCardArrow">↗</span></button>
 <div className="themeCardActions"><button aria-label={`编辑${record.name}名称`} title="编辑名称" onClick={()=>onRename(record)}>✎</button><button aria-label={`删除${record.name}主题`} title="删除主题" onClick={()=>onDelete(record)}>⌫</button></div>
 </article>})}</div></section>
-{active&&<div className="modal themeDetailModal" onClick={()=>setActiveId(null)}><div className="themeDetailDialog" onClick={event=>event.stopPropagation()}><div className="modalHead"><div><small>THEME DETAIL</small><h2>{active.name}</h2><p>{related.length} 个拍摄任务 · {related.reduce((sum,task)=>sum+(task.stations?.length||0),0)} 个机位</p></div><button onClick={()=>setActiveId(null)}>×</button></div>
+{active&&<div className="modal themeDetailModal" onClick={()=>setActiveId(null)}><div className="themeDetailDialog" onClick={event=>event.stopPropagation()}><div className="modalHead"><div><small>THEME DETAIL</small><h2>{active.name}</h2><p>{activeCounts.pointCount} 个关联点位 · {activeCounts.stationCount} 个关联机位</p></div><button onClick={()=>setActiveId(null)}>×</button></div>
 <div className="themeDetailHero"><span className="themeDetailIcon">{themeIcon(active.name)?<img src={themeIcon(active.name)} alt=""/>:<b>{active.name.slice(0,1)}</b>}</span><div><strong>{active.name}拍摄清单</strong><p>集中查看该主题下的点位状态、优先级、拍摄方式和全部机位。</p></div><button onClick={()=>{setActiveId(null);onOpen(active.name)}}>在点位库中查看 →</button></div>
 <div className="themeDetailList">{related.length?related.map(task=><article key={task.id}><div className="themeDetailTitle"><div><span>{task.district}</span><h3>{task.location}</h3></div><span className={`status status-${task.status}`}>{task.status}</span></div><div className="themeDetailMeta"><span>优先级 {task.priority}</span><span>通透度 {task.clarity}</span><span>{task.methods.join("、")}</span><span>{task.media.join("、")}</span></div><div className="themeDetailStations"><small>拍摄机位</small><p>{task.stations?.length?task.stations.map(station=>`${station.name}${station.description?`（${station.description}）`:""}`).join("；"):"尚未添加机位"}</p></div>{task.note&&<p className="themeDetailNote">备注：{task.note}</p>}<button className="themeTaskEdit" onClick={()=>{setActiveId(null);onEdit(task.id)}}>查看并编辑任务 →</button></article>):<div className="themeDetailEmpty"><strong>暂无拍摄内容</strong><p>可以先在点位详情中关联这个主题。</p></div>}</div>
 </div></div>}</>}
