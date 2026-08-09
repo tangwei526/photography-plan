@@ -137,6 +137,15 @@ function AstronomyHero(){
   </section>
 }
 
+function OverviewStats({pointCount,districtCount,counts,scheduleCount,coordinateCount}:{pointCount:number;districtCount:number;counts:{unshot:number;redo:number;done:number};scheduleCount:number;coordinateCount:number}){
+  return <section className="stats">
+    <article><span className="statIcon orange">⌖</span><div><small>独立点位</small><strong>{pointCount}<i>个</i></strong><em>覆盖 {districtCount} 个区域</em></div></article>
+    <article><span className="statIcon blue">◷</span><div><small>未拍摄任务</small><strong>{counts.unshot}<i>条</i></strong><em>优先安排高优任务</em></div></article>
+    <article><span className="statIcon amber">↻</span><div><small>待补拍 / 已毕业</small><strong>{counts.redo}<i> / {counts.done}</i></strong><em>可追踪缺失镜头</em></div></article>
+    <article><span className="statIcon green">◉</span><div><small>已安排日程</small><strong>{scheduleCount}<i>条</i></strong><em>{coordinateCount} 条含精确坐标</em></div></article>
+  </section>
+}
+
 export default function Home(){
   const [tasks,setTasks]=useState<Task[]>(baseTasks); const [hydrated,setHydrated]=useState(false); const [view,setView]=useState<View>("library");
   const [themeMode,setThemeMode]=useState<"light"|"dark">("light");
@@ -206,7 +215,7 @@ export default function Home(){
 </div>
   </header>
   <div className={view==="gallery"?"shell galleryShell":"shell"}>
-{view==="library"&&<AstronomyHero/>}
+{view==="library"&&<div className="homeOverview"><AstronomyHero/><OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={tasks.filter(t=>t.longitude&&t.latitude).length}/></div>}
 {view!=="gallery"&&<><section className="intro">
 <div>
 <p className="eyebrow">CHONGQING PHOTO ATLAS · WORKSPACE</p>
@@ -215,44 +224,7 @@ export default function Home(){
 </div>
 {view!=="calendar"&&view!=="themes"&&<button className="primary" onClick={createPoint}>＋ 新建点位</button>}
 </section>
-  <section className="stats">
-<article>
-<span className="statIcon orange">⌖</span>
-<div>
-<small>独立点位</small>
-<strong>{groups.length}<i>个</i>
-</strong>
-<em>覆盖 {districts.length} 个区域</em>
-</div>
-</article>
-<article>
-<span className="statIcon blue">◷</span>
-<div>
-<small>未拍摄任务</small>
-<strong>{counts.unshot}<i>条</i>
-</strong>
-<em>优先安排高优任务</em>
-</div>
-</article>
-<article>
-<span className="statIcon amber">↻</span>
-<div>
-<small>待补拍 / 已毕业</small>
-<strong>{counts.redo}<i> / {counts.done}</i>
-</strong>
-<em>可追踪缺失镜头</em>
-</div>
-</article>
-<article>
-<span className="statIcon green">◉</span>
-<div>
-<small>已安排日程</small>
-<strong>{calendarEvents.length}<i>条</i>
-</strong>
-<em>{tasks.filter(t=>t.longitude&&t.latitude).length} 条含精确坐标</em>
-</div>
-</article>
-</section></>}
+{view!=="library"&&<OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={tasks.filter(t=>t.longitude&&t.latitude).length}/>}</>}
 
   {view==="library"&&<section className="workspace">
 <aside>
