@@ -141,7 +141,7 @@ export default function Home(){
   const [tasks,setTasks]=useState<Task[]>(baseTasks); const [hydrated,setHydrated]=useState(false); const [view,setView]=useState<View>("library");
   const [themeMode,setThemeMode]=useState<"light"|"dark">("light");
   const [district,setDistrict]=useState("全部行政区"); const [status,setStatus]=useState("全部状态"); const [priority,setPriority]=useState("全部优先级"); const [category,setCategory]=useState("全部归类"); const [query,setQuery]=useState("");
-  const [expanded,setExpanded]=useState<string|null>(null); const [editing,setEditing]=useState<number|null>(null); const [mapTask,setMapTask]=useState<number|null>(null);
+  const [expanded,setExpanded]=useState<string|null>(null); const [pointEditOnOpen,setPointEditOnOpen]=useState(false); const [editing,setEditing]=useState<number|null>(null); const [mapTask,setMapTask]=useState<number|null>(null);
   const [routeIds,setRouteIds]=useState<number[]>([]); const [route,setRoute]=useState<RouteInfo|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [amapLocating,setAmapLocating]=useState(false); const amapSyncing=useRef(false);
   const [weather,setWeather]=useState<WeatherDay[]>([]); const [weatherLoading,setWeatherLoading]=useState(false); const [month,setMonth]=useState(currentMonth);
   const [calendarEvents,setCalendarEvents]=useState<CalendarEvent[]>([]);
@@ -173,7 +173,8 @@ export default function Home(){
   async function openEditor(id:number){if(await ensureAdmin()){setEditing(id);return true}return false}
   async function changeStatus(t:Task){if(await ensureAdmin())update(t.id,{status:statuses[(statuses.indexOf(t.status)+1)%3]})}
   async function createPoint(){if(!(await ensureAdmin()))return;const id=Math.max(0,...tasks.map(t=>t.id))+1;setTasks([{id,district:districts[0]||"渝中区",location:"新拍摄点位",priority:"低",theme:"常规记录",themeCategory:"",methods:["待规划"],media:["照片"],clarity:"中",status:"未拍摄",note:"",sourceRow:0,stations:[],samples:[]},...tasks]);setEditing(id);setView("library")}
-  async function updatePointGroup(point:ReturnType<typeof group>[number],patch:{location:string;district:string;longitude?:number;latitude?:number}){if(!(await ensureAdmin()))return false;setTasks(items=>items.map(task=>`${task.district}::${task.location}`===point.key?{...task,...patch,coordinateSystem:patch.longitude&&patch.latitude?"gcj02":task.coordinateSystem}:task));setExpanded(`${patch.district}::${patch.location}`);return true}
+  async function updatePointGroup(point:ReturnType<typeof group>[number],patch:{location:string;district:string;longitude?:number;latitude?:number}){if(!(await ensureAdmin()))return false;setTasks(items=>items.map(task=>`${task.district}::${task.location}`===point.key?{...task,...patch,coordinateSystem:patch.longitude&&patch.latitude?"gcj02":task.coordinateSystem}:task));setPointEditOnOpen(false);setExpanded(`${patch.district}::${patch.location}`);return true}
+  async function removePointGroup(point:ReturnType<typeof group>[number]){if(!confirm(`删除“${point.location}”点位及其 ${point.tasks.length} 个关联主题？此操作无法撤销。`)||!(await ensureAdmin()))return;setTasks(items=>items.filter(task=>`${task.district}::${task.location}`!==point.key));if(expanded===point.key)setExpanded(null)}
   async function addPointThemes(point:ReturnType<typeof group>[number],names:string[]){if(!names.length||!(await ensureAdmin()))return false;const source=point.tasks[0];setTasks(items=>{let nextId=Math.max(0,...items.map(task=>task.id))+1;const existing=new Set(point.tasks.map(task=>task.themeCategory||task.theme));const additions=names.filter(name=>!existing.has(name)).map(name=>({id:nextId++,district:point.district,location:point.location,priority:"低" as Priority,theme:name,themeCategory:name,methods:["待规划"],media:["照片"],clarity:"中",status:"未拍摄" as Status,note:"",sourceRow:0,longitude:source.longitude,latitude:source.latitude,coordinateSystem:source.coordinateSystem,stations:[],samples:[]}));return [...items,...additions]});return true}
   async function removePointTheme(point:ReturnType<typeof group>[number],task:Task){const message=point.tasks.length===1?"这是该点位的最后一个主题，移除后点位也会被删除。继续吗？":`从该点位移除“${task.theme}”主题？`;if(!confirm(message)||!(await ensureAdmin()))return;setTasks(items=>items.filter(item=>item.id!==task.id));if(point.tasks.length===1)setExpanded(null)}
   async function saveCalendarEvent(item:CalendarEvent,isNew:boolean){if(!(await ensureAdmin()))return false;const response=await fetch("/api/planner",{method:isNew?"POST":"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({kind:"event",...item})});const data=await response.json().catch(()=>({}));if(!response.ok){alert(data.error||"日程保存失败");return false}setCalendarEvents(events=>isNew?[...events,data.item].sort((a,b)=>`${a.eventDate}${a.startTime}`.localeCompare(`${b.eventDate}${b.startTime}`)):events.map(event=>event.id===item.id?{...event,...data.item}:event));return true}
@@ -288,11 +289,11 @@ export default function Home(){
 </div>
 <div className="listHead">
 <span>显示 {filtered.length} 个点位</span>
-<small>按优先级排序 · 点击卡片查看点位与关联主题</small>
+<small>按优先级排序 · 点击卡片直接编辑点位</small>
 </div>
 <div className="spotList">{filtered.map(g=>
 <article className="locationCard" key={g.key}>
-<button className="locationSummary" onClick={()=>setExpanded(g.key)}>
+<button className="locationSummary" onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}>
 <span className={`priorityBadge priority-${g.priority}`}>{g.priority}</span>
 <div className="locationName">
 <div>
@@ -310,11 +311,11 @@ export default function Home(){
 </div>
 <span className={`status status-${g.status}`}>{g.status}</span>
 <span className="chevron">↗</span>
-</button></article>)}</div>
+</button><div className="pointCardActions"><button aria-label={`编辑${g.location}`} title="编辑点位" onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}>✎</button><button aria-label={`删除${g.location}`} title="删除点位" onClick={()=>removePointGroup(g)}>⌫</button></div></article>)}</div>
 </div>
 </section>}
 
-  {view==="library"&&activeGroup&&<PointDetailModal key={activeGroup.key} point={activeGroup} districts={districts} categories={themeCategories} onClose={()=>setExpanded(null)} onSave={patch=>updatePointGroup(activeGroup,patch)} onAddThemes={names=>addPointThemes(activeGroup,names)} onManageTheme={async id=>{if(await openEditor(id))setExpanded(null)}} onRemoveTheme={task=>removePointTheme(activeGroup,task)} onChangeStatus={changeStatus}/>}
+  {view==="library"&&activeGroup&&<PointDetailModal key={`${activeGroup.key}-${pointEditOnOpen?"edit":"view"}`} point={activeGroup} initialEditing={pointEditOnOpen} districts={districts} categories={themeCategories} onClose={()=>{setExpanded(null);setPointEditOnOpen(false)}} onSave={patch=>updatePointGroup(activeGroup,patch)} onAddThemes={names=>addPointThemes(activeGroup,names)} onManageTheme={async id=>{if(await openEditor(id))setExpanded(null)}} onRemoveTheme={task=>removePointTheme(activeGroup,task)} onChangeStatus={changeStatus}/>}
 
   {view==="gallery"&&<Gallery tasks={tasks} categories={themeCategories} onEdit={async id=>{if(await ensureAdmin()){setEditing(id);setView("library")}}}/>}
 
@@ -364,8 +365,8 @@ export default function Home(){
   </div>{editing!==null&&selected&&<Editor task={selected} categories={themeCategories} update={p=>update(selected.id,p)} close={()=>setEditing(null)} addStation={()=>addStation(selected.id)} addSamples={f=>addSamples(selected.id,f)}/>}</main>
 }
 
-function PointDetailModal({point,districts,categories,onClose,onSave,onAddThemes,onManageTheme,onRemoveTheme,onChangeStatus}:{point:ReturnType<typeof group>[number];districts:string[];categories:string[];onClose:()=>void;onSave:(patch:{location:string;district:string;longitude?:number;latitude?:number})=>Promise<boolean>;onAddThemes:(names:string[])=>Promise<boolean>;onManageTheme:(id:number)=>void;onRemoveTheme:(task:Task)=>void;onChangeStatus:(task:Task)=>void}){
-  const source=point.tasks[0];const [editingPoint,setEditingPoint]=useState(false);const [saving,setSaving]=useState(false);const [themePickerOpen,setThemePickerOpen]=useState(false);const [selectedThemes,setSelectedThemes]=useState<string[]>([]);const [linking,setLinking]=useState(false);const [draft,setDraft]=useState({location:point.location,district:point.district,longitude:source.longitude?String(source.longitude):"",latitude:source.latitude?String(source.latitude):""});
+function PointDetailModal({point,initialEditing,districts,categories,onClose,onSave,onAddThemes,onManageTheme,onRemoveTheme,onChangeStatus}:{point:ReturnType<typeof group>[number];initialEditing?:boolean;districts:string[];categories:string[];onClose:()=>void;onSave:(patch:{location:string;district:string;longitude?:number;latitude?:number})=>Promise<boolean>;onAddThemes:(names:string[])=>Promise<boolean>;onManageTheme:(id:number)=>void;onRemoveTheme:(task:Task)=>void;onChangeStatus:(task:Task)=>void}){
+  const source=point.tasks[0];const [editingPoint,setEditingPoint]=useState(Boolean(initialEditing));const [saving,setSaving]=useState(false);const [themePickerOpen,setThemePickerOpen]=useState(false);const [selectedThemes,setSelectedThemes]=useState<string[]>([]);const [linking,setLinking]=useState(false);const [draft,setDraft]=useState({location:point.location,district:point.district,longitude:source.longitude?String(source.longitude):"",latitude:source.latitude?String(source.latitude):""});
   const linked=new Set(point.tasks.map(task=>task.themeCategory||task.theme));const available=categories.filter(name=>!linked.has(name));
   async function save(){if(!draft.location.trim())return;setSaving(true);if(await onSave({location:draft.location.trim(),district:draft.district,longitude:n(draft.longitude),latitude:n(draft.latitude)}))setEditingPoint(false);setSaving(false)}
   async function linkThemes(){if(!selectedThemes.length)return;setLinking(true);if(await onAddThemes(selectedThemes)){setSelectedThemes([]);setThemePickerOpen(false)}setLinking(false)}
