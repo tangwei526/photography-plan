@@ -2,16 +2,24 @@ import { env } from "cloudflare:workers";
 
 const values = () => env as unknown as { AMAP_WEB_SERVICE_KEY?: string };
 const text = (value: unknown, max = 160) => String(value || "").trim().slice(0, max);
+const wait = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
+const retryableCodes = new Set(["10014", "10015", "10016", "10019", "10020", "10021", "10022", "10023"]);
 
 async function amap(path: string, params: Record<string, string>) {
   const key = values().AMAP_WEB_SERVICE_KEY;
   if (!key) throw new Error("高德 Web 服务尚未配置");
   const url = new URL(path, "https://restapi.amap.com");
   Object.entries({ ...params, key }).forEach(([name, value]) => url.searchParams.set(name, value));
-  const response = await fetch(url, { headers: { accept: "application/json" } });
-  const data = await response.json() as Record<string, any>;
-  if (!response.ok || String(data.status) !== "1") throw new Error(text(data.info, 100) || "高德地图请求失败");
-  return data;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const response = await fetch(url, { headers: { accept: "application/json" } });
+    const data = await response.json() as Record<string, any>;
+    if (response.ok && String(data.status) === "1") return data;
+    const code = String(data.infocode || "");
+    if (retryableCodes.has(code) && attempt < 2) { await wait(1200 * (attempt + 1)); continue; }
+    if (retryableCodes.has(code)) throw new Error("高德接口请求过于频繁，请稍后重试");
+    throw new Error(text(data.info, 100) || "高德地图请求失败");
+  }
+  throw new Error("高德地图请求失败");
 }
 
 export async function POST(request: Request) {
@@ -20,13 +28,16 @@ export async function POST(request: Request) {
   try {
     if (action === "locate") {
       const source = Array.isArray(body.items) ? body.items.slice(0, 20) : [];
-      const items = await Promise.all(source.map(async (item: Record<string, unknown>) => {
+      const items: Array<Record<string, unknown>> = [];
+      for (let index = 0; index < source.length; index++) {
+        const item = source[index] as Record<string, unknown>;
         const key = text(item.key, 260); const district = text(item.district, 60); const location = text(item.location, 160);
-        if (!key || !location) return { key };
+        if (!key || !location) { items.push({ key }); continue; }
         const data = await amap("/v3/geocode/geo", { address: `重庆市${district}${location}`, city: "重庆", output: "JSON" });
         const point = data.geocodes?.[0]; const [longitude, latitude] = String(point?.location || "").split(",").map(Number);
-        return Number.isFinite(longitude) && Number.isFinite(latitude) ? { key, longitude, latitude, formattedAddress: point.formatted_address || "" } : { key };
-      }));
+        items.push(Number.isFinite(longitude) && Number.isFinite(latitude) ? { key, longitude, latitude, formattedAddress: point.formatted_address || "" } : { key });
+        if (index < source.length - 1) await wait(1100);
+      }
       return Response.json({ items });
     }
     if (action === "convert") {
