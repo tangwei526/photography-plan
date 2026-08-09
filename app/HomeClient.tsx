@@ -367,7 +367,7 @@ function PointDetailModal({point,initialEditing,districts,categories,onClose,onS
 function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onEdit:(id:number)=>void}){
   const [remote,setRemote]=useState<GallerySample[]>([]); const [loading,setLoading]=useState(true); const [error,setError]=useState("");
   const [query,setQuery]=useState(""); const [district,setDistrict]=useState("全部行政区"); const [theme,setTheme]=useState("全部主题"); const [category,setCategory]=useState("全部归类");
-  const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState("");
+  const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState(""); const [uploadError,setUploadError]=useState("");
   const [editingMeta,setEditingMeta]=useState(false); const [savingMeta,setSavingMeta]=useState(false); const [editError,setEditError]=useState("");
   const [toast,setToast]=useState<{message:string;kind:"success"|"error"}|null>(null); const toastTimer=useRef<number|undefined>(undefined);
   const [draggedGroup,setDraggedGroup]=useState<string|null>(null);const [dropTarget,setDropTarget]=useState<string|null>(null);const [pendingMerge,setPendingMerge]=useState<{source:string;target:string}|null>(null);const [merging,setMerging]=useState(false);
@@ -375,8 +375,9 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
   const [queue,setQueue]=useState<UploadJob[]>([]); const [broken,setBroken]=useState<Set<string>>(new Set());
   const [draft,setDraft]=useState<SampleDraft>({originalName:"",location:"",themeCategory:"",device:"",shootTime:"",stationId:"",stationName:"",stationDescription:"",subjectDescription:"",note:""});
   const [taskId,setTaskId]=useState(String(tasks[0]?.id||"")); const [stationName,setStationName]=useState(""); const [uploadDevice,setUploadDevice]=useState(""); const [uploadShootTime,setUploadShootTime]=useState(""); const [uploadLocation,setUploadLocation]=useState(""); const [note,setNote]=useState(""); const filesRef=useRef<HTMLInputElement>(null);
-  const load=async()=>{setLoading(true);setError("");try{const r=await fetch(sampleApi);if(!r.ok)throw new Error();const d=await r.json();setRemote((d.items||[]).map((x:GallerySample)=>({...x,themeCategory:x.themeCategory||inferThemeCategory(x.theme),url:x.url.startsWith("/")?`${sampleApi}${x.url.slice("/api/samples".length)}`:x.url})))}catch{setError("云端样片暂时无法读取，请稍后重试。")}finally{setLoading(false)}};
-  useEffect(()=>{load();uploadJobs().then(setQueue).catch(()=>{})},[]);
+  const normalizeSample=(x:GallerySample):GallerySample=>({...x,themeCategory:x.themeCategory||inferThemeCategory(x.theme),url:x.url.startsWith("/")?`${sampleApi}${x.url.slice("/api/samples".length)}`:x.url});
+  const load=async()=>{setLoading(true);setError("");try{const r=await fetch(sampleApi,{cache:"no-store"});if(!r.ok)throw new Error();const d=await r.json();setRemote((d.items||[]).map(normalizeSample))}catch{setError("云端样片暂时无法读取，请稍后重试。")}finally{setLoading(false)}};
+  useEffect(()=>{load();uploadJobs().then(async jobs=>{const recovered=jobs.map(job=>job.status==="uploading"?{...job,status:"failed" as const,error:"上次上传被中断，可从已完成进度继续"}:job);await Promise.all(recovered.map(saveUploadJob));setQueue(recovered)}).catch(()=>{})},[]);
   const local=useMemo(()=>tasks.flatMap(t=>(t.samples||[]).map(s=>({id:`local-${t.id}-${s.id}`,url:s.url,uploadedAt:"",taskId:String(t.id),district:t.district,location:t.location,theme:t.theme,themeCategory:t.themeCategory||inferThemeCategory(t.theme),stationId:t.stations?.[0]?.id||"",stationName:t.stations?.[0]?.name||"未指定机位",stationDescription:t.stations?.[0]?.description||"",subjectDescription:"",note:t.note||"",originalName:s.name,local:true} as GallerySample))),[tasks]);
   const all=[...remote,...local]; const districts=[...new Set(all.map(x=>x.district).filter(Boolean))]; const themes=[...new Set(all.map(x=>x.theme).filter(Boolean))];
   const shown=all.filter(x=>(district==="全部行政区"||x.district===district)&&(theme==="全部主题"||x.theme===theme)&&(category==="全部归类"||(x.themeCategory||"")===category)&&`${x.location} ${x.stationName} ${x.device||""} ${x.shootTime||""} ${x.themeCategory||"未归类"} ${x.theme} ${x.subjectDescription||""} ${x.note} ${x.originalName}`.toLowerCase().includes(query.toLowerCase()));
@@ -392,46 +393,79 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
   function pointerMove(event:React.PointerEvent<HTMLButtonElement>){if(!touchDrag.current){const origin=pressOrigin.current;if(origin&&Math.hypot(event.clientX-origin.x,event.clientY-origin.y)>10)clearPress();return}event.preventDefault();const card=document.elementFromPoint(event.clientX,event.clientY)?.closest<HTMLElement>("[data-gallery-group]");touchTarget.current=card?.dataset.galleryGroup||null;setDropTarget(touchTarget.current)}
   function pointerEnd(){clearPress();if(touchDrag.current)prepareMerge(touchDrag.current,touchTarget.current);touchDrag.current=null;touchTarget.current=null;window.setTimeout(()=>{suppressClick.current=false},0)}
   async function mergeGroups(){if(!pendingMerge||!(await ensureAdmin()))return;const source=sampleGroups.find(item=>item.key===pendingMerge.source);const target=sampleGroups.find(item=>item.key===pendingMerge.target);if(!source||!target)return;setMerging(true);const groupId=target.cover.groupId||crypto.randomUUID();const affected=[...target.samples,...source.samples];try{for(const item of affected){const response=await fetch(sampleApi,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:item.id,groupId})});if(!response.ok)throw new Error()}const ids=new Set(affected.map(item=>item.id));setRemote(items=>items.map(item=>ids.has(item.id)?{...item,groupId}:item));setPendingMerge(null);notify(`已将 ${affected.length} 张同机位样片合并展示`,"success")}catch{await load();notify("合并失败，请重试","error")}finally{setMerging(false)}}
-  async function resumeUploads(jobs:UploadJob[]){if(!jobs.length||!(await ensureAdmin()))return;
-setUploading(true);
-setError("");
-for(let index=0;
-index<jobs.length;
-index++){let job={...jobs[index],status:"uploading" as const,error:""};
-try{await saveUploadJob(job);
-setQueue(items=>items.map(x=>x.jobId===job.jobId?job:x));
-setProgress(`正在续传 ${index+1} / ${jobs.length}：${job.originalName}`);
-if(!job.uploadId||!job.objectId){const init=await fetch(sampleApi,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"init",type:job.file.type,size:job.file.size,taskId:job.taskId,district:job.district,location:job.location,theme:job.theme,themeCategory:job.themeCategory,device:job.device,shootTime:job.shootTime,stationId:job.stationId,stationName:job.stationName,stationDescription:job.stationDescription,note:job.note,originalName:job.originalName})});
-const data=await init.json().catch(()=>({}));
-if(!init.ok)throw new Error(data.error||"无法开始上传");
-job={...job,uploadId:data.uploadId,objectId:data.id};
-await saveUploadJob(job)}const chunkSize=5*1024*1024;
-const total=Math.ceil(job.file.size/chunkSize);
-for(let partNumber=1;
-partNumber<=total;
-partNumber++){if(job.parts.some(p=>p.partNumber===partNumber))continue;
-const body=job.file.slice((partNumber-1)*chunkSize,Math.min(partNumber*chunkSize,job.file.size));
-let response:Response|null=null;
-for(let attempt=1;
-attempt<=3;
-attempt++){try{response=await fetch(`${sampleApi}?upload=part&id=${encodeURIComponent(job.objectId!)}&uploadId=${encodeURIComponent(job.uploadId!)}&partNumber=${partNumber}`,{method:"PUT",body});
-if(response.ok)break}catch{}if(attempt<3)await new Promise(resolve=>setTimeout(resolve,attempt*700))}const part=await response?.json().catch(()=>({}));
-if(!response?.ok)throw new Error(part?.error||`第 ${partNumber} 段上传中断`);
-job={...job,parts:[...job.parts,{partNumber:Number(part.partNumber),etag:String(part.etag)}]};
-await saveUploadJob(job);
-setQueue(items=>items.map(x=>x.jobId===job.jobId?job:x));
-setProgress(`正在续传 ${index+1} / ${jobs.length}：${Math.round(job.parts.length/total*100)}%`)}const complete=await fetch(sampleApi,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"complete",id:job.objectId,uploadId:job.uploadId,parts:job.parts})});
-if(!complete.ok){
-const check=await fetch(`${sampleApi}?check=${encodeURIComponent(job.objectId!)}`).then(r=>r.json()).catch(()=>({exists:false}));
-if(!check.exists){const completeData=await complete.json().catch(()=>({}));throw new Error(completeData.error||"合并图片失败")}}
-await deleteUploadJob(job.jobId);
-setQueue(items=>items.filter(x=>x.jobId!==job.jobId))}catch(reason){const failed={...job,status:"failed" as const,error:reason instanceof Error?reason.message:"上传中断"};
-await saveUploadJob(failed).catch(()=>{});
-setQueue(items=>items.map(x=>x.jobId===failed.jobId?failed:x));
-setError("部分图片尚未完成，可稍后继续上传。")}}setUploading(false);
-setProgress("");
-await load()}
-  async function upload(){const sources=[...(filesRef.current?.files||[])].slice(0,60);if(!pickedTask||!stationName.trim()||!sources.length)return;const unsupported=sources.filter(file=>!supportedUploadTypes.has(file.type));if(unsupported.length){setError(`${unsupported.map(file=>file.name).join("、")} 无法直接显示，请先转换为 JPG、PNG、WebP、GIF 或 AVIF。`);return}setUploading(true);setError("");const prepared:{file:File;originalName:string}[]=[];try{for(let i=0;i<sources.length;i++){setProgress(sources[i].size>uploadLimitBytes?`正在压缩 ${i+1} / ${sources.length}`:`正在准备 ${i+1} / ${sources.length}`);prepared.push({file:await compressForUpload(sources[i]),originalName:sources[i].name})}}catch(reason){setError(reason instanceof Error?reason.message:"图片压缩失败");setUploading(false);setProgress("");return}setUploading(false);const station=pickedTask.stations?.find(s=>s.name===stationName);const jobs=prepared.map(({file,originalName})=>({jobId:crypto.randomUUID(),file,taskId:String(pickedTask.id),district:pickedTask.district,location:uploadLocation.trim(),theme:pickedTask.theme,themeCategory:pickedTask.themeCategory||inferThemeCategory(pickedTask.theme),device:uploadDevice,shootTime:uploadShootTime,stationId:station?.id||"",stationName:stationName.trim(),stationDescription:"",note,originalName,parts:[],status:"waiting" as const,createdAt:Date.now()}));await Promise.all(jobs.map(saveUploadJob));setQueue(items=>[...items,...jobs]);if(filesRef.current)filesRef.current.value="";await resumeUploads(jobs)}
+  async function resumeUploads(jobs:UploadJob[]){
+    if(!jobs.length||!(await ensureAdmin()))return;
+    setUploading(true);setUploadError("");
+    let succeeded=0;let failedCount=0;
+    for(let index=0;index<jobs.length;index++){
+      let job={...jobs[index],status:"uploading" as const,error:""};
+      try{
+        if(!supportedUploadTypes.has(job.file.type))throw new Error("格式不受支持，请转换为 JPG、PNG、WebP、GIF 或 AVIF 后重新选择");
+        if(job.file.size>uploadLimitBytes){
+          setProgress(`正在压缩 ${index+1} / ${jobs.length}：${job.originalName}`);
+          job={...job,file:await compressForUpload(job.file),uploadId:undefined,objectId:undefined,parts:[]};
+        }
+        await saveUploadJob(job);
+        setQueue(items=>items.map(x=>x.jobId===job.jobId?job:x));
+        setProgress(`正在上传 ${index+1} / ${jobs.length}：${job.originalName}`);
+        if(!job.uploadId||!job.objectId){
+          const init=await fetch(sampleApi,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"init",type:job.file.type,size:job.file.size,taskId:job.taskId,district:job.district,location:job.location,theme:job.theme,themeCategory:job.themeCategory,device:job.device,shootTime:job.shootTime,stationId:job.stationId,stationName:job.stationName,stationDescription:job.stationDescription,note:job.note,originalName:job.originalName})});
+          const data=await init.json().catch(()=>({}));
+          if(!init.ok)throw new Error(data.error||`服务器拒绝上传（${init.status}）`);
+          job={...job,uploadId:data.uploadId,objectId:data.id};
+          await saveUploadJob(job);
+        }
+        const chunkSize=5*1024*1024;const total=Math.ceil(job.file.size/chunkSize);
+        for(let partNumber=1;partNumber<=total;partNumber++){
+          if(job.parts.some(p=>p.partNumber===partNumber))continue;
+          const body=job.file.slice((partNumber-1)*chunkSize,Math.min(partNumber*chunkSize,job.file.size));let response:Response|null=null;
+          for(let attempt=1;attempt<=3;attempt++){
+            try{response=await fetch(`${sampleApi}?upload=part&id=${encodeURIComponent(job.objectId!)}&uploadId=${encodeURIComponent(job.uploadId!)}&partNumber=${partNumber}`,{method:"PUT",body});if(response.ok)break}catch{}
+            if(attempt<3)await new Promise(resolve=>setTimeout(resolve,attempt*700));
+          }
+          const part=await response?.json().catch(()=>({}));
+          if(!response?.ok)throw new Error(part?.error||`上传中断（第 ${partNumber} 段，${response?.status||"网络错误"}）`);
+          job={...job,parts:[...job.parts,{partNumber:Number(part.partNumber),etag:String(part.etag)}]};
+          await saveUploadJob(job);setQueue(items=>items.map(x=>x.jobId===job.jobId?job:x));
+          setProgress(`正在上传 ${index+1} / ${jobs.length}：${Math.round(job.parts.length/total*100)}%`);
+        }
+        const complete=await fetch(sampleApi,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"complete",id:job.objectId,uploadId:job.uploadId,parts:job.parts})});
+        const completeData=await complete.json().catch(()=>({}));let uploaded=completeData.item as GallerySample|undefined;
+        if(!complete.ok){
+          const check=await fetch(`${sampleApi}?check=${encodeURIComponent(job.objectId!)}`,{cache:"no-store"}).then(r=>r.json()).catch(()=>({exists:false}));
+          if(!check.exists)throw new Error(completeData.error||`服务器合并图片失败（${complete.status}）`);
+          uploaded=check.item;
+        }
+        if(!uploaded)uploaded={id:job.objectId!,url:`/api/samples?id=${encodeURIComponent(job.objectId!)}`,uploadedAt:new Date().toISOString(),size:job.file.size,taskId:job.taskId,district:job.district,location:job.location,theme:job.theme,themeCategory:job.themeCategory,device:job.device,shootTime:job.shootTime,stationId:job.stationId,stationName:job.stationName,stationDescription:job.stationDescription,subjectDescription:"",note:job.note,originalName:job.originalName};
+        const normalized=normalizeSample(uploaded);
+        setRemote(items=>[normalized,...items.filter(item=>item.id!==normalized.id)]);
+        await deleteUploadJob(job.jobId);setQueue(items=>items.filter(x=>x.jobId!==job.jobId));succeeded++;
+      }catch(reason){
+        const failed={...job,status:"failed" as const,error:reason instanceof Error?reason.message:"未知上传错误"};
+        await saveUploadJob(failed).catch(()=>{});setQueue(items=>items.map(x=>x.jobId===failed.jobId?failed:x));failedCount++;
+      }
+    }
+    setUploading(false);setProgress("");
+    if(failedCount){setUploadError(`${failedCount} 张上传失败，成功的 ${succeeded} 张已加入画廊。请在下方查看原因并重试。`);notify(`${failedCount} 张上传失败，可单独重试`,"error");}
+    else if(succeeded){setUploadOpen(false);notify(`${succeeded} 张样片已上传并加入画廊`,"success");}
+  }
+  async function upload(){
+    const sources=[...(filesRef.current?.files||[])].slice(0,60);if(!pickedTask||!stationName.trim()||!sources.length)return;
+    setUploading(true);setUploadError("");const station=pickedTask.stations?.find(s=>s.name===stationName);const jobs:UploadJob[]=[];
+    for(let i=0;i<sources.length;i++){
+      const source=sources[i];let file=source;let status:UploadJob["status"]="waiting";let jobError="";
+      setProgress(source.size>uploadLimitBytes?`正在压缩 ${i+1} / ${sources.length}`:`正在准备 ${i+1} / ${sources.length}`);
+      try{if(!supportedUploadTypes.has(source.type))throw new Error("格式不受支持，请转换为 JPG、PNG、WebP、GIF 或 AVIF 后重新选择");file=await compressForUpload(source)}catch(reason){status="failed";jobError=reason instanceof Error?reason.message:"图片压缩失败"}
+      const job:UploadJob={jobId:crypto.randomUUID(),file,taskId:String(pickedTask.id),district:pickedTask.district,location:uploadLocation.trim(),theme:pickedTask.theme,themeCategory:pickedTask.themeCategory||inferThemeCategory(pickedTask.theme),device:uploadDevice,shootTime:uploadShootTime,stationId:station?.id||"",stationName:stationName.trim(),stationDescription:"",note,originalName:source.name,parts:[],status,error:jobError,createdAt:Date.now()};
+      await saveUploadJob(job);jobs.push(job);
+    }
+    setQueue(items=>[...items,...jobs]);setUploading(false);setProgress("");if(filesRef.current)filesRef.current.value="";
+    const ready=jobs.filter(job=>job.status==="waiting");const preparationFailures=jobs.length-ready.length;
+    if(preparationFailures)setUploadError(`${preparationFailures} 张图片无法准备上传，请查看下方原因。`);
+    if(ready.length)await resumeUploads(ready);
+    if(preparationFailures){setUploadOpen(true);setUploadError(`${preparationFailures} 张图片无法准备上传，其他图片已正常处理。请查看下方原因。`)}
+  }
+  async function discardUpload(jobId:string){await deleteUploadJob(jobId).catch(()=>{});setQueue(items=>items.filter(item=>item.jobId!==jobId))}
   async function reupload(item:GallerySample,file:File|undefined){if(!file||item.local||!(await ensureAdmin()))return;if(!supportedUploadTypes.has(file.type)){alert("请先转换为 JPG、PNG、WebP、GIF 或 AVIF");return}setUploading(true);setProgress(file.size>uploadLimitBytes?"正在压缩替换图片…":"正在替换图片…");let prepared:File;try{prepared=await compressForUpload(file)}catch(reason){alert(reason instanceof Error?reason.message:"图片压缩失败");setUploading(false);setProgress("");return}const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(file.name)}`,{method:"PUT",headers:{"content-type":prepared.type},body:prepared});const data=await r.json().catch(()=>({}));setUploading(false);setProgress("");if(!r.ok){alert(data.error||"重新上传失败");return}setActive(null);setBroken(items=>{const next=new Set(items);next.delete(item.id);return next});await load()}
   async function remove(item:GallerySample){if(item.local||!confirm("删除这张云端样片？删除后不可恢复。")||!(await ensureAdmin()))return;const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}`,{method:"DELETE"});if(!r.ok){alert("管理权限已失效，请重新验证");return}setActive(null);await load()}
   async function startEdit(item:GallerySample){if(!(await ensureAdmin()))return;setDraft({originalName:item.originalName||"",location:item.location||"",themeCategory:item.themeCategory||inferThemeCategory(item.theme),device:item.device||"",shootTime:item.shootTime||"",stationId:item.stationId||"",stationName:item.stationName||"",stationDescription:item.stationDescription||"",subjectDescription:item.subjectDescription||"",note:item.note||""});setEditError("");setEditingMeta(true)}
@@ -446,8 +480,8 @@ await load()}
 <button className="primary" onClick={()=>setUploadOpen(true)}>＋ 批量上传样片</button>
 </div>
 {queue.length>0&&<div className="uploadRecovery">
-<div><strong>{queue.length} 张图片等待续传</strong><small>已完成的分片不会重复上传，断网或重启后仍可继续。</small></div>
-<button disabled={uploading} onClick={()=>resumeUploads(queue)}>{uploading?progress:"继续上传"}</button>
+<div className="uploadRecoveryHead"><div><strong>{queue.length} 张图片尚未完成</strong><small>每张图片独立上传；成功项会立即进入画廊，失败项会保留原因和进度。</small></div><button disabled={uploading} onClick={()=>resumeUploads(queue)}>{uploading?progress:"全部重试"}</button></div>
+<div className="uploadQueueList">{queue.map(job=><div className={`uploadQueueItem uploadQueue-${job.status}`} key={job.jobId}><div><strong title={job.originalName}>{job.originalName}</strong><small>{job.status==="uploading"?"正在上传…":job.status==="waiting"?"等待上传":job.error||"上传失败，请重试"}</small></div><span>{job.status==="failed"?"失败":job.status==="uploading"?"上传中":"待处理"}</span><div className="uploadQueueActions">{job.status==="failed"&&<button disabled={uploading} onClick={()=>resumeUploads([job])}>重试</button>}<button className="uploadDiscard" disabled={uploading&&job.status==="uploading"} onClick={()=>discardUpload(job.jobId)}>移除</button></div></div>)}</div>
 </div>}
 <div className="galleryFilters">
 <label className="search">⌕<input placeholder="搜索点位、机位、主题归类或备注…" value={query} onChange={e=>setQuery(e.target.value)}/>
@@ -504,7 +538,7 @@ await load()}
 </label>
 <label className="fileDrop">选择照片<input ref={filesRef} type="file" accept="image/*" multiple/>
 <small>支持 JPG、PNG、WebP、GIF、AVIF；超过 4MB 会在上传前自动压缩到 4MB 以内。HEIC/RAW 请先转换。</small>
-</label>{error&&<p className="uploadError">{error}</p>}<div className="modalActions">
+</label>{uploadError&&<p className="uploadError">{uploadError}</p>}<div className="modalActions">
 <button onClick={()=>setUploadOpen(false)}>取消</button>
 <button className="primary" disabled={uploading||!stationName.trim()} onClick={upload}>{uploading?progress:"开始上传"}</button>
 </div>

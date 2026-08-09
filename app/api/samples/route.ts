@@ -14,6 +14,10 @@ const displayableImageTypes = new Set(["image/jpeg", "image/png", "image/webp", 
 const extensionFor = (type: string) => ({ "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "image/gif":"gif", "image/avif":"avif" }[type] || "jpg");
 const allowedOrigin = "https://tangwei526.github.io";
 const cors = (request: Request) => ({ "access-control-allow-origin": request.headers.get("origin") === allowedOrigin ? allowedOrigin : "", "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS", "access-control-allow-headers": "content-type,x-admin-key", "vary": "origin" });
+const jsonHeaders = (request: Request) => ({ ...cors(request), "cache-control": "no-store" });
+const sampleItem = (object: R2Object, id = object.key.slice("samples/".length)) => ({
+  id, url: `/api/samples?id=${encodeURIComponent(id)}`, uploadedAt: object.uploaded.toISOString(), size: object.size, ...(object.customMetadata || {}),
+});
 const secured = (request: Request) => {
   const values = env as unknown as { SAMPLE_ADMIN_KEY?: string; SAMPLE_ADMIN_SESSION?: string };
   const cookie = request.headers.get("cookie") || "";
@@ -32,8 +36,9 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const check = url.searchParams.get("check");
   if (check) {
-    if (check.includes("/")) return Response.json({ exists: false }, { status: 400, headers: cors(request) });
-    return Response.json({ exists: Boolean(await bucket().head(`samples/${check}`)) }, { headers: cors(request) });
+    if (check.includes("/")) return Response.json({ exists: false }, { status: 400, headers: jsonHeaders(request) });
+    const object = await bucket().head(`samples/${check}`);
+    return Response.json({ exists: Boolean(object), item: object ? sampleItem(object, check) : undefined }, { headers: jsonHeaders(request) });
   }
   const id = url.searchParams.get("id");
   if (id) {
@@ -57,9 +62,9 @@ export async function GET(request: Request) {
 
   const items = objects.sort((a,b) => b.uploaded.getTime() - a.uploaded.getTime()).map(object => {
     const id = object.key.slice("samples/".length);
-    return { id, url: `/api/samples?id=${encodeURIComponent(id)}`, uploadedAt: object.uploaded.toISOString(), size: object.size, ...(object.customMetadata || {}) };
+    return sampleItem(object, id);
   });
-  return Response.json({ items }, { headers: cors(request) });
+  return Response.json({ items }, { headers: jsonHeaders(request) });
 }
 
 export async function POST(request: Request) {
@@ -86,8 +91,9 @@ export async function POST(request: Request) {
       const parts = Array.isArray(body.parts) ? body.parts.map(part => ({ partNumber: Number((part as Record<string, unknown>).partNumber), etag: cleanText((part as Record<string, unknown>).etag, 200) })) : [];
       if (!id || id.includes("/") || !uploadId || !parts.length) return Response.json({ error: "续传信息不完整" }, { status: 400, headers: cors(request) });
       const upload = bucket().resumeMultipartUpload(`samples/${id}`, uploadId);
-      await upload.complete(parts);
-      return Response.json({ ok: true, id, url: `/api/samples?id=${encodeURIComponent(id)}` }, { headers: cors(request) });
+      const completed = await upload.complete(parts);
+      const object = await bucket().head(`samples/${id}`) || completed;
+      return Response.json({ ok: true, item: sampleItem(object, id) }, { headers: jsonHeaders(request) });
     }
     return Response.json({ error: "无效上传操作" }, { status: 400, headers: cors(request) });
   }
