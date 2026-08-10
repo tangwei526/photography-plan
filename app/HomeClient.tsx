@@ -3,6 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import sourceData from "./spots.json";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
+import { toast as shadcnToast } from "@/components/ui/toast";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, LogOutIcon, MoonIcon, PencilIcon, PlusIcon, SunIcon, Trash2Icon } from "lucide-react";
 
 type Status = "未拍摄" | "待补拍" | "已毕业";
 type Priority = "低" | "中" | "高";
@@ -219,11 +227,11 @@ export default function Home(){
 <nav>{nav.map(x=>
 <button key={x.id} className={view===x.id?"navActive":""} onClick={()=>openView(x.id)}>{x.label}</button>)}</nav>
 <div className="headerActions">
-<button className="soft themeToggle" onClick={toggleTheme} aria-label={themeMode==="dark"?"切换到浅色模式":"切换到暗黑模式"}>{themeMode==="dark"?"☀ 浅色":"◐ 暗色"}</button>
-<button className="soft" onClick={async()=>{if(await ensureAdmin())inputRef.current?.click()}}>导入 Excel</button>
-<a className="soft" href={`${assetBase}摄影点位导入模板.xlsx`} download>下载模板</a>
-<button className="dark" onClick={exportExcel}>导出修改</button>
-<button className="soft" onClick={logout}>退出</button>
+<Tooltip><TooltipTrigger render={<Button variant="outline" size="sm"/>} onClick={toggleTheme} aria-label={themeMode==="dark"?"切换到浅色模式":"切换到暗黑模式"}>{themeMode==="dark"?<SunIcon data-icon="inline-start"/>:<MoonIcon data-icon="inline-start"/>}{themeMode==="dark"?"浅色":"暗色"}</TooltipTrigger><TooltipContent>切换网站配色</TooltipContent></Tooltip>
+<Button variant="outline" size="sm" onClick={async()=>{if(await ensureAdmin())inputRef.current?.click()}}><FileUpIcon data-icon="inline-start"/>导入 Excel</Button>
+<a className={buttonVariants({variant:"outline",size:"sm"})} href={`${assetBase}摄影点位导入模板.xlsx`} download><DownloadIcon data-icon="inline-start"/>下载模板</a>
+<Button size="sm" onClick={exportExcel}><FileDownIcon data-icon="inline-start"/>导出修改</Button>
+<Tooltip><TooltipTrigger render={<Button variant="ghost" size="icon-sm"/>} onClick={logout} aria-label="退出登录"><LogOutIcon/></TooltipTrigger><TooltipContent>退出登录</TooltipContent></Tooltip>
 <input ref={inputRef} hidden type="file" accept=".xlsx,.xls" onChange={e=>e.target.files?.[0]&&importExcel(e.target.files[0])}/>
 </div>
   </header>
@@ -235,7 +243,7 @@ export default function Home(){
 <h1>{view==="library"?"把重庆，拍得更完整。":view==="gallery"?"先看见，再抵达。":view==="map"?"先看天，再出发。":view==="calendar"?"把好天气留给重要机位。":view==="themes"?"按主题，整理每一个机位。":"每一个空白，都有下一次出发。"}</h1>
 <p>共 {groups.length} 个点位、{tasks.length} 条主题任务；点位修改保存在当前设备，云端样片长期保存。</p>
 </div>
-{view!=="calendar"&&view!=="themes"&&<button className="primary" onClick={createPoint}>＋ 新建点位</button>}
+{view!=="calendar"&&view!=="themes"&&<Button size="lg" onClick={createPoint}><PlusIcon data-icon="inline-start"/>新建点位</Button>}
 </section>
 {view!=="library"&&<OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={tasks.filter(t=>t.longitude&&t.latitude).length}/>}</>}
 
@@ -294,9 +302,9 @@ export default function Home(){
 <i style={{width:`${g.tasks.filter(t=>t.status==="已毕业").length/g.tasks.length*100}%`}}/>
 </div>
 </div>
-<span className={`status status-${g.status}`}>{g.status}</span>
+<Badge variant={g.status==="待补拍"?"destructive":g.status==="已毕业"?"default":"secondary"}>{g.status}</Badge>
 <span className="chevron">↗</span>
-</button><div className="pointCardActions"><button aria-label={`编辑${g.location}`} title="编辑点位" onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}>✎</button><button aria-label={`删除${g.location}`} title="删除点位" onClick={()=>removePointGroup(g)}>⌫</button></div></article>)}</div>
+</button><div className="pointCardActions"><Tooltip><TooltipTrigger render={<Button variant="secondary" size="icon-sm"/>} aria-label={`编辑${g.location}`} onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}><PencilIcon/></TooltipTrigger><TooltipContent>编辑点位</TooltipContent></Tooltip><Tooltip><TooltipTrigger render={<Button variant="destructive" size="icon-sm"/>} aria-label={`删除${g.location}`} onClick={()=>removePointGroup(g)}><Trash2Icon/></TooltipTrigger><TooltipContent>删除点位</TooltipContent></Tooltip></div></article>)}</div>
 </div>
 </section>}
 
@@ -383,7 +391,6 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
   const [query,setQuery]=useState(""); const [district,setDistrict]=useState("全部行政区"); const [theme,setTheme]=useState("全部主题"); const [category,setCategory]=useState("全部归类");
   const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState(""); const [uploadError,setUploadError]=useState("");
   const [editingMeta,setEditingMeta]=useState(false); const [savingMeta,setSavingMeta]=useState(false); const [editError,setEditError]=useState("");
-  const [toast,setToast]=useState<{message:string;kind:"success"|"error"}|null>(null); const toastTimer=useRef<number|undefined>(undefined);
   const [draggedGroup,setDraggedGroup]=useState<string|null>(null);const [dropTarget,setDropTarget]=useState<string|null>(null);const [pendingMerge,setPendingMerge]=useState<{source:string;target:string}|null>(null);const [merging,setMerging]=useState(false);
   const pressTimer=useRef<number|undefined>(undefined);const pressOrigin=useRef<{x:number;y:number}|null>(null);const touchDrag=useRef<string|null>(null);const touchTarget=useRef<string|null>(null);const suppressClick=useRef(false);
   const [queue,setQueue]=useState<UploadJob[]>([]); const [broken,setBroken]=useState<Set<string>>(new Set()); const [deleting,setDeleting]=useState<Set<string>>(new Set());
@@ -399,7 +406,7 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
   const activeSamples=active?(sampleGroups.find(item=>item.samples.some(sample=>sample.id===active.id))?.samples||[active]):[];
   const pickedTask=tasks.find(t=>String(t.id)===taskId);
   const activeTask=active?tasks.find(t=>String(t.id)===active.taskId):undefined;
-  function notify(message:string,kind:"success"|"error"){if(toastTimer.current)window.clearTimeout(toastTimer.current);setToast({message,kind});toastTimer.current=window.setTimeout(()=>setToast(null),2600)}
+  function notify(message:string,kind:"success"|"error"){shadcnToast.add({title:message,type:kind,timeout:2600})}
   const stationKey=(item:GallerySample)=>item.stationId?`id:${item.stationId}`:`${item.district}::${item.location}::${item.stationName.trim().toLowerCase()}`;
   function prepareMerge(sourceKey:string|null,targetKey:string|null){setDraggedGroup(null);setDropTarget(null);if(!sourceKey||!targetKey||sourceKey===targetKey)return;const source=sampleGroups.find(item=>item.key===sourceKey);const target=sampleGroups.find(item=>item.key===targetKey);if(!source||!target)return;if([...source.samples,...target.samples].some(item=>item.local)){notify("本地样片需要上传后才能合并","error");return}if(!source.cover.stationName.trim()||stationKey(source.cover)!==stationKey(target.cover)){notify("仅支持合并同一拍摄机位的样片","error");return}setPendingMerge({source:sourceKey,target:targetKey})}
   function clearPress(){if(pressTimer.current)window.clearTimeout(pressTimer.current);pressTimer.current=undefined;pressOrigin.current=null}
@@ -472,7 +479,7 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
 <h2>样片瀑布流</h2>
 <p>从照片反查点位与机位，把灵感直接落到下一次拍摄。</p>
 </div>
-<button className="primary" onClick={()=>setUploadOpen(true)}>＋ 批量上传样片</button>
+<Button size="lg" onClick={()=>setUploadOpen(true)}><ImagesIcon data-icon="inline-start"/>批量上传样片</Button>
 </div>
 {queue.length>0&&<div className="uploadRecovery">
 <div className="uploadRecoveryHead"><div><strong>{queue.length} 张图片尚未完成</strong><small>每张图片独立上传；成功项会立即进入画廊，失败项会保留原因和进度。</small></div><button disabled={uploading} onClick={()=>resumeUploads(queue)}>{uploading?progress:"全部重试"}</button></div>
@@ -491,17 +498,13 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
 <option>全部主题</option>{themes.map(x=>
 <option key={x}>{x}</option>)}</select>
 <span>{shown.length} 张样片 · {sampleGroups.length} 组</span>
-</div>{loading?<div className="galleryEmpty">正在整理样片…</div>:shown.length?<div className="masonry">{sampleGroups.map(groupItem=>{const item=groupItem.cover;return <article role="button" tabIndex={0} className={`sampleCard ${draggedGroup===groupItem.key?"sampleDragging":""} ${dropTarget===groupItem.key?"sampleDropTarget":""}`} key={groupItem.key} data-gallery-group={groupItem.key} draggable={!item.local} onDragStart={event=>{event.dataTransfer.effectAllowed="move";setDraggedGroup(groupItem.key)}} onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect="move";setDropTarget(groupItem.key)}} onDragLeave={()=>setDropTarget(current=>current===groupItem.key?null:current)} onDrop={event=>{event.preventDefault();prepareMerge(draggedGroup,groupItem.key)}} onDragEnd={()=>{setDraggedGroup(null);setDropTarget(null)}} onPointerDown={event=>pointerDown(groupItem.key,event)} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd} onClick={event=>{if(suppressClick.current){event.preventDefault();return}setActive(item)}} onKeyDown={event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();setActive(item)}}}>
+</div>{loading?<Empty className="galleryEmpty"><EmptyHeader><EmptyMedia variant="icon"><Spinner/></EmptyMedia><EmptyTitle>正在整理样片</EmptyTitle><EmptyDescription>正在加载云端照片和机位信息。</EmptyDescription></EmptyHeader></Empty>:shown.length?<div className="masonry">{sampleGroups.map(groupItem=>{const item=groupItem.cover;return <article role="button" tabIndex={0} className={`sampleCard ${draggedGroup===groupItem.key?"sampleDragging":""} ${dropTarget===groupItem.key?"sampleDropTarget":""}`} key={groupItem.key} data-gallery-group={groupItem.key} draggable={!item.local} onDragStart={event=>{event.dataTransfer.effectAllowed="move";setDraggedGroup(groupItem.key)}} onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect="move";setDropTarget(groupItem.key)}} onDragLeave={()=>setDropTarget(current=>current===groupItem.key?null:current)} onDrop={event=>{event.preventDefault();prepareMerge(draggedGroup,groupItem.key)}} onDragEnd={()=>{setDraggedGroup(null);setDropTarget(null)}} onPointerDown={event=>pointerDown(groupItem.key,event)} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd} onClick={event=>{if(suppressClick.current){event.preventDefault();return}setActive(item)}} onKeyDown={event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();setActive(item)}}}>
 {broken.has(item.id)?<span className="brokenSample"><b>图片无法显示</b><small>点击查看并重新上传</small></span>:<img src={item.url} alt={`${item.location} ${item.stationName}`} onError={()=>setBroken(items=>new Set(items).add(item.id))}/>}{groupItem.samples.length>1&&<b className="sampleCount">组图 · {groupItem.samples.length} 张</b>}<div className="sampleCardActions" onPointerDown={event=>event.stopPropagation()} onClick={event=>event.stopPropagation()}><button aria-label={`编辑${item.originalName||"样片"}`} title="编辑样片" disabled={item.local} onClick={()=>startEdit(item)}>✎</button><button aria-label={`删除${item.originalName||"样片"}`} title="删除样片" disabled={item.local||deleting.has(item.id)} onClick={()=>remove(item)}>⌫</button></div>
 <span>
 <b>{item.originalName||"未命名样片"}</b>
 <small>{item.stationName||"未关联机位"}{item.device?` · ${item.device}`:""}{item.shootTime?` · ${item.shootTime}`:""}</small>
 </span>
-</article>})}</div>:<div className="galleryEmpty">
-<strong>画廊还是空的</strong>
-<p>{error||"上传第一批参考照片，并把它们关联到具体机位。"}</p>
-<button className="primary" onClick={()=>setUploadOpen(true)}>上传样片</button>
-</div>}
+</article>})}</div>:<Empty className="galleryEmpty"><EmptyHeader><EmptyMedia variant="icon"><ImagesIcon/></EmptyMedia><EmptyTitle>画廊还是空的</EmptyTitle><EmptyDescription>{error||"上传第一批参考照片，并把它们关联到具体机位。"}</EmptyDescription></EmptyHeader><EmptyContent><Button onClick={()=>setUploadOpen(true)}><FileUpIcon data-icon="inline-start"/>上传样片</Button></EmptyContent></Empty>}
   {uploadOpen&&<div className="modal">
 <div className="uploadDialog">
 <div className="modalHead">
@@ -627,7 +630,7 @@ function Gallery({tasks,categories,onEdit}:{tasks:Task[];categories:string[];onE
 <dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.note||"暂无备注"}<small>点击编辑</small></button></dd>
 </div>
 </dl>{!active.local&&<label className="soft full reuploadButton">{broken.has(active.id)?"重新上传图片":"替换图片"}<input hidden type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" onChange={e=>reupload(active,e.target.files?.[0])}/></label>}<button className="primary full" onClick={()=>onEdit(Number(active.taskId))}>打开对应拍摄任务</button>{!active.local&&<button className="dangerText" onClick={()=>remove(active)}>删除这张样片</button>}</>}</aside>
-</div>}{pendingMerge&&<div className="modal mergeModal" onClick={()=>!merging&&setPendingMerge(null)}><div className="mergeDialog" onClick={event=>event.stopPropagation()}><div className="modalHead"><div><small>MERGE REFERENCES</small><h2>合并同机位样片</h2><p>合并后，画廊首页会以一张组图卡片集中展示这些照片。</p></div><button disabled={merging} onClick={()=>setPendingMerge(null)}>×</button></div><div className="mergePreview">{[pendingMerge.source,pendingMerge.target].map(key=>{const item=sampleGroups.find(groupItem=>groupItem.key===key);return item&&<article key={key}><img src={item.cover.url} alt={item.cover.originalName}/><span><b>{item.cover.originalName}</b><small>{item.samples.length} 张 · {item.cover.stationName}</small></span></article>})}</div><p className="mergeNotice">仅合并画廊展示关系，不会删除或覆盖任何原始图片。</p><div className="modalActions"><button disabled={merging} onClick={()=>setPendingMerge(null)}>取消</button><button className="primary" disabled={merging} onClick={mergeGroups}>{merging?"正在合并…":"确认合并"}</button></div></div></div>}{toast&&<div className={`toast toast-${toast.kind}`} role="status"><span>{toast.kind==="success"?"✓":"!"}</span>{toast.message}</div>}</section>
+</div>}<AlertDialog open={Boolean(pendingMerge)} onOpenChange={open=>{if(!open&&!merging)setPendingMerge(null)}}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>合并同机位样片</AlertDialogTitle><AlertDialogDescription>合并后，画廊首页会以一张组图卡片集中展示；原始图片不会被删除或覆盖。</AlertDialogDescription></AlertDialogHeader>{pendingMerge&&<div className="mergePreview">{[pendingMerge.source,pendingMerge.target].map(key=>{const item=sampleGroups.find(groupItem=>groupItem.key===key);return item&&<article key={key}><img src={item.cover.url} alt={item.cover.originalName}/><span><b>{item.cover.originalName}</b><small>{item.samples.length} 张 · {item.cover.stationName}</small></span></article>})}</div>}<AlertDialogFooter><AlertDialogCancel disabled={merging}>取消</AlertDialogCancel><AlertDialogAction disabled={merging} onClick={mergeGroups}>{merging?<><Spinner data-icon="inline-start"/>正在合并</>:"确认合并"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></section>
 }
 
 function Calendar({month,setMonth,events,onSave,onDelete,onSync}:{month:string;setMonth:(m:string)=>void;events:CalendarEvent[];onSave:(item:CalendarEvent,isNew:boolean)=>Promise<boolean>;onDelete:(id:string)=>Promise<boolean>;onSync:()=>void}){
