@@ -205,7 +205,8 @@ export default function Home(){
   const groups=useMemo(()=>group(points,taskViews),[points,taskViews]); const districts=useMemo(()=>[...new Set(points.map(point=>point.district))],[points]); const availableDistricts=useMemo(()=>[...new Set([...chongqingDistricts,...districts])],[districts]); const activeGroup=groups.find(item=>item.key===expanded);
   const filtered=useMemo(()=>groups.filter(g=>(district==="全部行政区"||g.district===district)&&(status==="全部状态"||g.status===status)&&(priority==="全部优先级"||g.priority===priority)&&(category==="全部归类"||g.themeNames.includes(category))&&`${g.location} ${g.district} ${g.themeNames.join(" ")} ${g.tasks.map(t=>`${t.timeWindow||""} ${t.theme} ${t.methods} ${t.note}`).join(" ")}`.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]),[groups,district,status,priority,category,query]);
   const counts={unshot:tasks.filter(t=>t.status==="未拍摄").length,redo:tasks.filter(t=>t.status==="待补拍").length,done:tasks.filter(t=>t.status==="已毕业").length};
-  const selected=taskViews.find(t=>t.id===(editing??mapTask)); const mappedTasks=groups.map((groupItem,index)=>groupItem.tasks[0]||({id:-(index+1),pointId:groupItem.point.id,district:groupItem.district,location:groupItem.location,priority:groupItem.priority,theme:"待创建拍摄任务",timeWindow:"自定义",methods:[],media:[],clarity:"低",status:"未拍摄",note:"",sourceRow:0,longitude:groupItem.point.longitude,latitude:groupItem.point.latitude,coordinateSystem:groupItem.point.coordinateSystem,stations:groupItem.stations,samples:[]} as Task));
+  const mappedTasks=groups.map((groupItem,index)=>groupItem.tasks[0]||({id:-(index+1),pointId:groupItem.point.id,district:groupItem.district,location:groupItem.location,priority:groupItem.priority,theme:"待创建拍摄任务",timeWindow:"自定义",methods:[],media:[],clarity:"低",status:"未拍摄",note:"",sourceRow:0,longitude:groupItem.point.longitude,latitude:groupItem.point.latitude,coordinateSystem:groupItem.point.coordinateSystem,stations:groupItem.stations,samples:[]} as Task));
+  const selected=taskViews.find(t=>t.id===(editing??mapTask)); const selectedMapTask=mapTask===null?undefined:mappedTasks.find(t=>t.id===mapTask);
   useEffect(()=>{if(view==="map"&&mapTask===null&&mappedTasks.length)loadWeather(mappedTasks[0])},[view,mapTask]);
   const update=(id:number,patch:Partial<Task>)=>{const current=tasks.find(task=>task.id===id);if(!current)return;const {stations,...taskPatch}=patch;if(stations){const valid=new Set(stations.map(station=>station.id));setPoints(items=>items.map(point=>point.id===current.pointId?{...point,stations}:point));setTasks(items=>items.map(task=>task.pointId===current.pointId?{...task,stationIds:(task.stationIds||[]).filter(stationId=>valid.has(stationId)),...(task.id===id?taskPatch:{})}:task))}else setTasks(items=>items.map(task=>task.id===id?{...task,...taskPatch}:task))};
 
@@ -359,11 +360,11 @@ export default function Home(){
 <strong>{(route.distance/1000).toFixed(1)} km</strong>
 <span>预计驾车 {Math.round(route.duration/60)} 分钟</span>
 </div>}<hr/>
-<h2>天气窗口</h2>{selected?<>
+<h2>天气窗口</h2>{selectedMapTask?<>
 <div className="weatherPlace">
-<strong>{selected.location}</strong>
-<button onClick={()=>openEditor(selected.id)}>编辑坐标</button>
-</div>{weatherLoading?<p className="loading">读取天气中…</p>:weatherError?<p className="weatherError">{weatherError}<button onClick={()=>loadWeather(selected)}>重新加载</button></p>:weather.length?<div className="weatherDays">{weather.map(w=>
+<strong>{selectedMapTask.location}</strong>
+{selectedMapTask.id>0&&<button onClick={()=>openEditor(selectedMapTask.id)}>编辑坐标</button>}
+</div>{weatherLoading?<p className="loading">读取天气中…</p>:weatherError?<p className="weatherError">{weatherError}<button onClick={()=>loadWeather(selectedMapTask)}>重新加载</button></p>:weather.length?<div className="weatherDays">{weather.map(w=>
 <article key={w.date}>
 <span className="weatherDayIcon" aria-hidden="true">{weatherSymbol(w.code)}</span><div>
 <strong>{w.date.slice(5)} · {w.text}</strong>
