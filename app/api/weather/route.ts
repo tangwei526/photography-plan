@@ -1,4 +1,6 @@
 import { env } from "cloudflare:workers";
+import { Buffer } from "node:buffer";
+import { createPrivateKey, sign as signJwt } from "node:crypto";
 
 type QWeatherEnv = {
   QWEATHER_API_HOST?: string;
@@ -12,10 +14,9 @@ let cachedToken: { value: string; refreshAt: number } | null = null;
 const encoder = new TextEncoder();
 
 const values = () => env as unknown as QWeatherEnv;
-const base64Url = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+const base64Url = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64url");
 const encodeJson = (value: unknown) => base64Url(encoder.encode(JSON.stringify(value)));
 const decodeBase64 = (value: string) => new TextDecoder().decode(Uint8Array.from(atob(value), character => character.charCodeAt(0)));
-const pemBytes = (pem: string) => Uint8Array.from(atob(pem.replace(/-----[^-]+-----|\s/g, "")), character => character.charCodeAt(0));
 const clock = (value?: string) => /T(\d{2}:\d{2})/.exec(String(value || ""))?.[1] || "";
 const percent = (value: unknown) => Math.round(Math.max(0, Math.min(1, Number(value) || 0)) * 100);
 
@@ -29,8 +30,7 @@ async function jwt() {
   const header = encodeJson({ alg: "EdDSA", kid: config.QWEATHER_KEY_ID });
   const payload = encodeJson({ sub: config.QWEATHER_PROJECT_ID, iat: issuedAt, exp: issuedAt + 900 });
   const signingInput = `${header}.${payload}`;
-  const key = await crypto.subtle.importKey("pkcs8", pemBytes(privatePem), { name: "Ed25519" }, false, ["sign"]);
-  const signature = new Uint8Array(await crypto.subtle.sign("Ed25519", key, encoder.encode(signingInput)));
+  const signature = signJwt(null, Buffer.from(signingInput), createPrivateKey(privatePem));
   const value = `${signingInput}.${base64Url(signature)}`;
   cachedToken = { value, refreshAt: issuedAt + 720 };
   return value;
@@ -82,6 +82,7 @@ export async function GET(request: Request) {
     }));
     return Response.json({ current, days, attribution: "和风天气", updatedAt: new Date().toISOString() }, { headers: { "cache-control": "public, max-age=300, stale-while-revalidate=600", "access-control-allow-origin": "*" } });
   } catch (reason) {
+    console.error("QWeather request failed", reason instanceof Error ? reason.message : reason);
     return Response.json({ error: reason instanceof Error ? reason.message : "天气服务暂不可用" }, { status: 502, headers: { "access-control-allow-origin": "*" } });
   }
 }
