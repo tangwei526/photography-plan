@@ -34,7 +34,9 @@ type Task = {
   scheduleDate?:string; scheduleSlot?:string; stations?:Station[]; samples?:Sample[]; retakeReason?:string;
   missingShots?:string; graduationCriteria?:string; coordinateSystem?:"wgs84"|"gcj02";
 };
-type WeatherDay = { date:string; sunrise:string; sunset:string; cloud:number; visibility:number; code:number };
+type WeatherDay = { date:string; sunrise:string; sunset:string; cloud:number; precipitation:number; humidity:number; code:string; text:string; tempMin:number; tempMax:number };
+type WeatherNow = { text:string; code:string; temperature:number; feelsLike:number; humidity:number; cloud:number; windScale:number; windSpeed:number; visibility:number; pressure:number };
+type WeatherLocation = { id?:string; name:string; adm2?:string; adm1?:string; country?:string; latitude:number; longitude:number };
 type RouteInfo = { distance:number; duration:number; geometry:[number,number][] };
 type AstronomyData = { date:string; sunrise:string; sunset:string; dawn:string; dusk:string; moonrise:string; moonset:string; moonPhase:number; moonIllumination:number; source?:string };
 
@@ -138,7 +140,10 @@ function MapCanvas({tasks,route,onPick}:{tasks:Task[];route:RouteInfo|null;onPic
   return <div ref={el} className="realMap">{mapError&&<div className="mapLoadError">{mapError}</div>}</div>;
 }
 
-const astronomyApi=typeof window!=="undefined"&&window.location.hostname.endsWith("github.io")?"https://shancheng-photo-atlas.ahaclassmate.chatgpt.site/api/astronomy":"/api/astronomy";
+const serviceBase=typeof window!=="undefined"&&window.location.hostname.endsWith("github.io")?"https://shancheng-photo-atlas.ahaclassmate.chatgpt.site":"";
+const astronomyApi=`${serviceBase}/api/astronomy`;
+const weatherApi=`${serviceBase}/api/weather`;
+const weatherSymbol=(code:string)=>{const value=Number(code);return value>=400&&value<500?"❄️":value>=300&&value<400?"🌧️":value>=500?"🌫️":value===100?"☀️":value>=101&&value<=104?"⛅":"🌤️"};
 const moonLabel=(phase:number)=>phase<22.5||phase>=337.5?"新月":phase<67.5?"蛾眉月":phase<112.5?"上弦月":phase<157.5?"盈凸月":phase<202.5?"满月":phase<247.5?"亏凸月":phase<292.5?"下弦月":"残月";
 const moonSymbol=(phase:number)=>phase<22.5||phase>=337.5?"🌑":phase<67.5?"🌒":phase<112.5?"🌓":phase<157.5?"🌔":phase<202.5?"🌕":phase<247.5?"🌖":phase<292.5?"🌗":"🌘";
 const lunarDate=(date:Date)=>{try{return new Intl.DateTimeFormat("zh-CN-u-ca-chinese",{month:"long",day:"numeric"}).format(date).replace(/\s/g,"")}catch{return "农历日期暂不可用"}};
@@ -153,6 +158,22 @@ function AstronomyHero(){
     <div className="astroMoon"><span className="moonGlyph" aria-hidden="true">{moonSymbol(phase)}</span><div><strong>{Math.round(data?.moonIllumination??0)}%</strong><span>{moonLabel(phase)}</span></div></div>
     <div className="astroTimeline">{events.map(event=><div className={`astroEvent astro-${event.color}`} key={event.label}><i/><small>{event.label}</small><strong>{event.time||"--:--"}</strong></div>)}</div>
     <div className="astroFoot"><span>● 太阳轨迹</span><span>● 月亮轨迹</span>{failed&&<em>天象数据暂未更新，稍后将自动重试</em>}</div>
+  </section>
+}
+
+function CurrentWeatherCard(){
+  const fallback:WeatherLocation={name:"重庆市",adm2:"重庆",latitude:29.563,longitude:106.5516};
+  const [location,setLocation]=useState<WeatherLocation>(fallback);const [weather,setWeather]=useState<WeatherNow|null>(null);const [loading,setLoading]=useState(true);const [message,setMessage]=useState("");
+  const [searchOpen,setSearchOpen]=useState(false);const [query,setQuery]=useState("");const [results,setResults]=useState<WeatherLocation[]>([]);const [searching,setSearching]=useState(false);
+  async function load(next:WeatherLocation){setLoading(true);setMessage("");try{const response=await fetch(`${weatherApi}?lat=${next.latitude}&lon=${next.longitude}`,{cache:"no-store"});const data=await response.json();if(!response.ok||!data.current)throw new Error(data.error||"实时天气暂不可用");setLocation(next);setWeather(data.current);localStorage.setItem("shancheng-weather-location",JSON.stringify(next))}catch(reason){setMessage(reason instanceof Error?reason.message:"实时天气暂不可用")}finally{setLoading(false)}}
+  async function useCurrentLocation(){if(!navigator.geolocation){setMessage("当前浏览器不支持定位");return}setLoading(true);setMessage("");navigator.geolocation.getCurrentPosition(async position=>{const coordinates={latitude:position.coords.latitude,longitude:position.coords.longitude};let next:WeatherLocation={...coordinates,name:"当前位置"};try{const lookup=await fetch(`${weatherApi}?mode=search&query=${encodeURIComponent(`${coordinates.longitude},${coordinates.latitude}`)}`).then(response=>response.json());if(lookup.locations?.[0])next=lookup.locations[0]}catch{}await load(next)},()=>{setLoading(false);setMessage("无法读取当前位置，可搜索城市切换")},{enableHighAccuracy:false,timeout:8000,maximumAge:600000})}
+  async function search(event:React.FormEvent){event.preventDefault();const keyword=query.trim();if(!keyword)return;setSearching(true);setMessage("");try{const response=await fetch(`${weatherApi}?mode=search&query=${encodeURIComponent(keyword)}`,{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"地点搜索失败");setResults(data.locations||[]);if(!data.locations?.length)setMessage("没有找到这个地点") }catch(reason){setMessage(reason instanceof Error?reason.message:"地点搜索失败")}finally{setSearching(false)}}
+  useEffect(()=>{let saved:WeatherLocation|undefined;try{saved=JSON.parse(localStorage.getItem("shancheng-weather-location")||"")}catch{}if(saved?.latitude&&saved?.longitude)load(saved);else useCurrentLocation()},[]);
+  return <section className="currentWeather" aria-label="当前地点实时天气">
+    <div className="currentWeatherMain"><span className="currentWeatherIcon" aria-hidden="true">{weatherSymbol(weather?.code||"")}</span><div><small>{location.name}{location.adm2&&location.adm2!==location.name?` · ${location.adm2}`:""}</small>{loading?<strong className="weatherPulse">读取天气…</strong>:weather?<strong>{weather.temperature}° <i>{weather.text}</i></strong>:<strong>天气未更新</strong>}<p>{weather?`体感 ${weather.feelsLike}° · 湿度 ${weather.humidity}% · ${weather.windScale}级风 · 能见度 ${weather.visibility}km`:message||"使用定位或搜索城市"}</p></div></div>
+    <div className="currentWeatherActions"><button type="button" onClick={useCurrentLocation}>⌖ 当前位置</button><button type="button" onClick={()=>{setSearchOpen(value=>!value);setResults([])}}>切换地点</button></div>
+    {searchOpen&&<form className="weatherSearch" onSubmit={search}><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="搜索城市或区县" aria-label="搜索天气地点"/><button disabled={searching||!query.trim()}>{searching?"搜索中":"搜索"}</button>{results.length>0&&<div className="weatherSearchResults">{results.map(item=><button type="button" key={`${item.id}-${item.latitude}`} onClick={()=>{load(item);setSearchOpen(false);setResults([]);setQuery("")}}><strong>{item.name}</strong><small>{[item.adm2,item.adm1].filter(Boolean).join(" · ")}</small></button>)}</div>}</form>}
+    {message&&<em>{message}</em>}<a href="https://www.qweather.com/" target="_blank" rel="noreferrer">数据来源：和风天气</a>
   </section>
 }
 
@@ -194,7 +215,7 @@ export default function Home(){
     if(imported.length&&confirm(`识别到 ${imported.length} 条任务，替换当前数据吗？`)){const migrated=migrateWorkspace(imported);setPoints(migrated.points.map(point=>{const names=[...(creativeThemes.get(`${point.district}::${point.location}`)||[])];return names.length?{...point,themeNames:names}:point}));setTasks(migrated.tasks);setView("library");}
   }
   function exportExcel(){const rows=taskViews.map(t=>{const point=points.find(item=>item.id===t.pointId);return{行政区域:t.district,点位名称:t.location,点位优先级:point?.priority||t.priority,拍摄任务:t.theme,拍摄时间:t.timeWindow||"自定义",创作主题:(point?.themeNames||[]).join("、"),拍摄方式:t.methods.join("、"),素材类型:t.media.join("、"),通透度要求:t.clarity,拍摄状态:t.status,计划日期:t.scheduleDate||"",计划时段:t.scheduleSlot||"",关联机位:(t.stationIds||[]).map(id=>point?.stations.find(station=>station.id===id)?.name).filter(Boolean).join("、"),全部机位:(point?.stations||[]).map(station=>station.name).join("、"),补拍原因:t.retakeReason||"",缺失镜头:t.missingShots||"",毕业标准:t.graduationCriteria||"",样片链接:(t.samples||[]).map(s=>s.url.startsWith("data:")?"本地样片":s.url).join("、"),备注:t.note}});const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"规范化点位数据");XLSX.writeFile(wb,`重庆拍摄点位_${new Date().toISOString().slice(0,10)}.xlsx`)}
-  async function loadWeather(t:Task){setMapTask(t.id);setWeatherLoading(true);const [lat,lon]=coord(t);try{const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=cloud_cover,visibility,weather_code&daily=sunrise,sunset&timezone=Asia%2FShanghai&forecast_days=7`;const d=await fetch(url).then(r=>r.json());setWeather(d.daily.time.map((date:string,i:number)=>{const idx=d.hourly.time.map((x:string)=>x.slice(0,10)).reduce((a:string[],x:string,j:number)=>x===date?[...a,j]:a,[]);return{date,sunrise:d.daily.sunrise[i].slice(11,16),sunset:d.daily.sunset[i].slice(11,16),cloud:Math.round(idx.reduce((s:number,j:number)=>s+d.hourly.cloud_cover[j],0)/(idx.length||1)),visibility:Math.round(Math.max(...idx.map((j:number)=>d.hourly.visibility[j]))/1000),code:d.hourly.weather_code[idx[12]||idx[0]]}}))}catch{setWeather([])}finally{setWeatherLoading(false)}}
+  async function loadWeather(t:Task){setMapTask(t.id);setWeatherLoading(true);const [lat,lon]=coord(t);try{const response=await fetch(`${weatherApi}?lat=${lat}&lon=${lon}`,{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"天气读取失败");setWeather(Array.isArray(data.days)?data.days:[])}catch{setWeather([])}finally{setWeatherLoading(false)}}
   async function locateAllPoints(){if(amapSyncing.current)return;const missing=points.filter(point=>!point.longitude||!point.latitude);const gps=points.filter(point=>point.longitude&&point.latitude&&point.coordinateSystem!=="gcj02");if(!missing.length&&!gps.length)return;amapSyncing.current=true;setAmapLocating(true);try{const updates=new Map<string,{longitude:number;latitude:number}>();for(let i=0;i<missing.length;i+=20){const batch=missing.slice(i,i+20);const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"locate",items:batch.map(point=>({key:point.id,district:point.district,location:point.location}))})});const data=await response.json();if(!response.ok)throw new Error(data.error||"点位解析失败");for(const item of data.items||[])if(item.longitude&&item.latitude)updates.set(item.key,{longitude:item.longitude,latitude:item.latitude})}for(let i=0;i<gps.length;i+=40){const batch=gps.slice(i,i+40);const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"convert",items:batch.map(point=>({key:point.id,longitude:point.longitude,latitude:point.latitude}))})});const data=await response.json();if(!response.ok)throw new Error(data.error||"坐标转换失败");for(const item of data.items||[])if(item.longitude&&item.latitude)updates.set(item.key,{longitude:item.longitude,latitude:item.latitude})}if(updates.size)setPoints(items=>items.map(point=>{const found=updates.get(point.id);return found?{...point,...found,coordinateSystem:"gcj02"}:point}))}catch(reason){alert(reason instanceof Error?reason.message:"暂时无法定位全部点位")}finally{setAmapLocating(false);amapSyncing.current=false}}
   async function planRoute(){const pts=routeIds.map(id=>taskViews.find(t=>t.id===id)).filter(Boolean) as Task[];if(pts.length<2)return;setRouteLoading(true);try{const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"route",locations:pts.map(task=>{const [latitude,longitude]=task.latitude&&task.longitude?[task.latitude,task.longitude]:coord(task);return[longitude,latitude]})})});const data=await response.json();setRoute(response.ok&&data.route?data.route:null)}catch{setRoute(null)}finally{setRouteLoading(false)}}
   function addStation(id:number){const task=tasks.find(item=>item.id===id);const point=points.find(item=>item.id===task?.pointId);if(!task||!point)return;const station={id:crypto.randomUUID(),name:`机位 ${point.stations.length+1}`,description:"待勘景"};setPoints(items=>items.map(item=>item.id===point.id?{...item,stations:[...item.stations,station]}:item));setTasks(items=>items.map(item=>item.id===id?{...item,stationIds:[...(item.stationIds||[]),station.id]}:item))}
@@ -242,7 +263,7 @@ export default function Home(){
 <h1>{view==="library"?"把重庆，拍得更完整。":view==="map"?"先看天，再出发。":view==="calendar"?"把好天气留给重要机位。":view==="themes"?"按主题，整理每一个机位。":"每一个空白，都有下一次出发。"}</h1>
 <p>共 {groups.length} 个点位、{tasks.length} 条拍摄任务；点位修改保存在当前设备，云端样片长期保存。</p>
 </div>
-{view!=="calendar"&&view!=="themes"&&<Button size="lg" onClick={createPoint}><PlusIcon data-icon="inline-start"/>新建点位</Button>}
+{view==="library"?<div className="libraryIntroActions"><CurrentWeatherCard/><Button size="lg" onClick={createPoint}><PlusIcon data-icon="inline-start"/>新建点位</Button></div>:view!=="calendar"&&view!=="themes"&&<Button size="lg" onClick={createPoint}><PlusIcon data-icon="inline-start"/>新建点位</Button>}
 </section>
 {view!=="library"&&<OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={points.filter(point=>point.longitude&&point.latitude).length}/>}</>}
 
@@ -343,12 +364,12 @@ export default function Home(){
 <button onClick={()=>openEditor(selected.id)}>编辑坐标</button>
 </div>{weatherLoading?<p className="loading">读取天气中…</p>:weather.length?<div className="weatherDays">{weather.map(w=>
 <article key={w.date}>
-<div>
-<strong>{w.date.slice(5)}</strong>
-<small>云量 {w.cloud}% · 能见度 {w.visibility}km</small>
+<span className="weatherDayIcon" aria-hidden="true">{weatherSymbol(w.code)}</span><div>
+<strong>{w.date.slice(5)} · {w.text}</strong>
+<small>{w.tempMin}–{w.tempMax}° · 云量 {w.cloud}% · 降水 {w.precipitation}%</small>
 </div>
-<span>↑ {w.sunrise}<br/>↓ {w.sunset}</span>
-</article>)}</div>:<p className="sub">点击地图上的点位查看 7 日天气。</p>}</>:<p className="sub">点击地图标记，查看云量、能见度与日出日落窗口。</p>}</aside>
+<span>日出 {w.sunrise}<br/>日落 {w.sunset}</span>
+</article>)}</div>:<p className="sub">点击地图上的点位查看 7 日天气。</p>}</>:<p className="sub">点击地图标记，查看天气现象、云量、降水概率与日出日落窗口。</p>}</aside>
 </section>}
 
   {view==="calendar"&&<Calendar month={month} setMonth={setMonth} events={calendarEvents} onSave={saveCalendarEvent} onDelete={removeCalendarEvent} onSync={()=>subscribeAppleCalendar(true)}/>}
