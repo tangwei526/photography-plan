@@ -46,3 +46,12 @@ test("point cards expose themes, unfinished tasks and field readiness", async ()
   assert.match(css, /\.pointTaskState-retake/);
   assert.match(css, /\.pointCardMeta/);
 });
+
+test("gallery edit controls are independent from the sample card opener", async () => {
+  const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(source, /className="sampleCardOpen"/);
+  assert.doesNotMatch(source, /<article role="button" tabIndex=\{0\} className=\{`sampleCard/);
+  assert.match(source, /setActive\(item\);setDraft\([\s\S]*?if\(!\(await ensureAdmin\(\)\)\)return;setEditingMeta\(true\)/);
+  assert.match(css, /\.lightbox\{[^}]*z-index:40/);
+});
