@@ -144,18 +144,27 @@ const weatherSymbol=(code:string)=>{const value=Number(code);return value>=400&&
 const moonLabel=(phase:number)=>phase<22.5||phase>=337.5?"新月":phase<67.5?"蛾眉月":phase<112.5?"上弦月":phase<157.5?"盈凸月":phase<202.5?"满月":phase<247.5?"亏凸月":phase<292.5?"下弦月":"残月";
 const moonSymbol=(phase:number)=>phase<22.5||phase>=337.5?"🌑":phase<67.5?"🌒":phase<112.5?"🌓":phase<157.5?"🌔":phase<202.5?"🌕":phase<247.5?"🌖":phase<292.5?"🌗":"🌘";
 const moonStatusForDate=(date:string)=>{const [year,month,day]=date.split("-").map(Number);const synodic=29.530588853;const knownNew=Date.UTC(2000,0,6,18,14);const moment=Date.UTC(year,month-1,day,4);const age=(((moment-knownNew)/86400000)%synodic+synodic)%synodic;const phase=age/synodic*360;return{phase,label:moonLabel(phase),symbol:moonSymbol(phase),illumination:Math.round((1-Math.cos(phase*Math.PI/180))/2*100)}};
-const lunarDate=(date:Date)=>{try{return new Intl.DateTimeFormat("zh-CN-u-ca-chinese",{month:"long",day:"numeric"}).format(date).replace(/\s/g,"")}catch{return "农历日期暂不可用"}};
+const lunarDate=(date:Date)=>{try{return new Intl.DateTimeFormat("zh-CN-u-ca-chinese",{month:"long",day:"numeric"}).format(date).replace(/\s/g,"")}catch{return "日期暂不可用"}};
+const clockMinutes=(value?:string)=>{const match=/^(\d{1,2}):(\d{2})$/.exec(value||"");if(!match)return null;return Number(match[1])*60+Number(match[2])};
+const countdownLabel=(minutes:number)=>minutes<60?`${minutes} 分钟`:`${Math.floor(minutes/60)} 小时${minutes%60?` ${minutes%60} 分钟`:""}`;
 function AstronomyHero(){
   const [now,setNow]=useState(()=>new Date());const [data,setData]=useState<AstronomyData|null>(null);const [failed,setFailed]=useState(false);
   const dateKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
   useEffect(()=>{const timer=window.setInterval(()=>setNow(new Date()),1000);return()=>window.clearInterval(timer)},[]);
   useEffect(()=>{let active=true;setFailed(false);fetch(`${astronomyApi}?date=${dateKey}`).then(response=>{if(!response.ok)throw new Error();return response.json()}).then(value=>{if(active)setData(value)}).catch(()=>{if(active)setFailed(true)});return()=>{active=false}},[dateKey]);
-  const phase=data?.moonPhase??0;const events=[{label:"月出",time:data?.moonrise,color:"moon"},{label:"晨间蓝调",time:data?.dawn,color:"blue"},{label:"日出",time:data?.sunrise,color:"sun"},{label:"月落",time:data?.moonset,color:"moon"},{label:"日落",time:data?.sunset,color:"sun"},{label:"晚间蓝调",time:data?.dusk,color:"blue"}];
+  const phase=data?.moonPhase??0;const illumination=Math.round(data?.moonIllumination??0);
+  const events=[{label:"月出",time:data?.moonrise,color:"moon",icon:MoonIcon},{label:"晨间蓝调",time:data?.dawn,color:"blue",icon:SunriseIcon},{label:"日出",time:data?.sunrise,color:"sun",icon:SunIcon},{label:"月落",time:data?.moonset,color:"moon",icon:MoonIcon},{label:"日落",time:data?.sunset,color:"sun",icon:SunIcon},{label:"晚间蓝调",time:data?.dusk,color:"blue",icon:SunsetIcon}];
+  const minutesNow=now.getHours()*60+now.getMinutes();const nextEvent=events.map(event=>({...event,minutes:clockMinutes(event.time)})).filter((event):event is typeof event&{minutes:number}=>event.minutes!==null&&event.minutes>=minutesNow).sort((a,b)=>a.minutes-b.minutes)[0];
+  const statusText=!data?(failed?"天象数据待重试":"正在同步天象数据"):nextEvent?`距${nextEvent.label} ${countdownLabel(nextEvent.minutes-minutesNow)}`:"今日光线窗口已结束";
   return <section className="astronomyHero" aria-label="今日天象与拍摄时间窗口">
-    <div className="astroLead"><span className="astroLocation">重庆市 · 今日光线窗口</span><strong suppressHydrationWarning>{now.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}</strong><p suppressHydrationWarning>{now.toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</p><small suppressHydrationWarning>{lunarDate(now)}</small></div>
-    <div className="astroMoon"><span className="moonGlyph" aria-hidden="true">{moonSymbol(phase)}</span><div><strong>{Math.round(data?.moonIllumination??0)}%</strong><span>{moonLabel(phase)}</span></div></div>
-    <div className="astroTimeline">{events.map(event=><div className={`astroEvent astro-${event.color}`} key={event.label}><i/><small>{event.label}</small><strong>{event.time||"--:--"}</strong></div>)}</div>
-    <div className="astroFoot"><span>● 太阳轨迹</span><span>● 月亮轨迹</span>{failed&&<em>天象数据暂未更新，稍后将自动重试</em>}</div>
+    <header className="astroHeader"><span className="astroLocation"><LocateFixedIcon aria-hidden="true"/>重庆 · 今日光线窗口</span><Badge variant="outline" className="astroStatus" aria-live="polite">{statusText}</Badge></header>
+    <div className="astroLead"><strong suppressHydrationWarning>{now.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false})}</strong><p suppressHydrationWarning>{now.toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</p><small suppressHydrationWarning>农历 {lunarDate(now)}</small></div>
+    <div className="astroMoon"><div className={`astroMoonDisc ${phase<180?"isWaxing":"isWaning"}`} style={{"--moon-shift":`${illumination}%`} as React.CSSProperties} role="img" aria-label={`${moonLabel(phase)}，月面照明 ${illumination}%`}/><div className="astroMoonMeta"><strong>{data?`${illumination}%`:"--"}</strong><span>{data?moonLabel(phase):"月相同步中"}</span></div></div>
+    <div className="astroTimeline" aria-label="今日太阳与月亮事件时间轴">
+      <div className="astroTrajectory" aria-hidden="true"><svg viewBox="0 0 100 28" preserveAspectRatio="none"><path className="moonPath" d="M5 24 Q26 -3 50 24"/><path className="sunPath" d="M48 24 Q69 -6 94 24"/></svg><span className="astroNowMarker" style={{left:`${Math.max(2,Math.min(98,minutesNow/14.4))}%`}}/></div>
+      <div className="astroEvents">{events.map(event=>{const EventIcon=event.icon;return <div className={`astroEvent astro-${event.color}`} key={event.label}><span className="astroEventNode"><EventIcon aria-hidden="true"/></span><small>{event.label}</small><strong>{event.time||"--:--"}</strong></div>})}</div>
+    </div>
+    <footer className="astroFoot"><span><i className="legendMoon"/>月亮事件</span><span><i className="legendBlue"/>蓝调时段</span><span><i className="legendSun"/>太阳事件</span>{failed&&<em role="status">天象数据暂未更新，将在下次打开时自动重试</em>}</footer>
   </section>
 }
 

@@ -88,9 +88,17 @@ test("mobile navigation, calendar creation and route selection remain reachable"
   assert.match(css, /@media\(max-width:720px\)\{[\s\S]*?\.topbar nav\{display:flex/);
 });
 
-test("astronomy time hydrates after mount and coverage keeps empty themes visible", async () => {
+test("astronomy card uses one photographic light timeline and coverage keeps empty themes visible", async () => {
   const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(source, /suppressHydrationWarning/);
+  assert.match(source, /statusText=.*?nextEvent/);
+  assert.match(source, /className="astroTrajectory"/);
+  assert.match(source, /className="astroNowMarker"/);
+  assert.match(source, /className=\{`astroMoonDisc/);
+  assert.match(css, /--astro-moon:#70a9ff/);
+  assert.match(css, /\.astroEvents\{display:grid;grid-template-columns:repeat\(6/);
+  assert.match(css, /\[data-theme="light"\] \.astronomyHero/);
   assert.match(source, /total===0\?"暂无关联"/);
   assert.doesNotMatch(source, /categoryStats=[\s\S]*?\.filter\(item=>item\.total>0\)/);
 });
