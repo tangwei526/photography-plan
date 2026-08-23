@@ -45,7 +45,18 @@ export default defineConfig(async () => {
 
   return {
     server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
+      ? {
+          // Keep the preview and its HMR websocket on one stable port. Without
+          // this, Vite can fall back to a different websocket endpoint behind
+          // the Codex preview proxy and the browser repeatedly reconnects.
+          port: 3000,
+          strictPort: true,
+          // Vite 8 still exposes the websocket client port through `hmr` in
+          // the installed runtime (the newer `server.ws` object is not yet in
+          // this package's public types).
+          hmr: { port: 3000, clientPort: 3000 },
+          watch: { useFsEvents: false, usePolling: true },
+        }
       : undefined,
     plugins: [
       vinext(),
