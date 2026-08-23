@@ -270,7 +270,7 @@ export default function Home(){
 {view!=="library"&&<OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={points.filter(point=>point.longitude&&point.latitude).length}/>}</>}
 
   {view==="library"&&<section className="workspace">
-<aside>
+<aside className="districtSidebar" aria-label="行政区域筛选">
 <div className="asideTitle">
 <span>行政区域</span>
 <small>{districts.length} 个</small>

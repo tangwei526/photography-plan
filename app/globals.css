@@ -150,3 +150,31 @@ button:active:not(:disabled),a.soft:active{transform:scale(.97);transition-durat
 
 /* 点位标题强化 */
 .locationName h3,.pointDialog #point-dialog-title{font-weight:800}
+
+/* 点位库行政区域：桌面端固定在左侧，列表独立滚动 */
+@media(min-width:721px){
+  .workspace{overflow:visible;align-items:start}
+  .districtSidebar{
+    position:sticky;
+    top:82px;
+    align-self:start;
+    max-height:calc(100vh - 98px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scrollbar-gutter:stable;
+    z-index:10;
+    border-radius:var(--apple-radius) 0 0 var(--apple-radius);
+    box-shadow:0 10px 28px #1720190d;
+  }
+}
+
+@media(max-width:720px){
+  .districtSidebar{
+    position:static;
+    max-height:none;
+    overflow-x:auto;
+    overflow-y:hidden;
+    border-radius:var(--apple-radius) var(--apple-radius) 0 0;
+    box-shadow:none;
+  }
+}
