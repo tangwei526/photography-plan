@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import sourceData from "./spots.json";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,7 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast as shadcnToast } from "@/components/ui/toast";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CameraIcon, CropIcon, DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, LocateFixedIcon, LogOutIcon, MapPinIcon, MoonIcon, MoveIcon, PencilIcon, PlusIcon, RefreshCwIcon, RotateCcwIcon, RotateCwIcon, SunriseIcon, SunsetIcon, SunIcon, Trash2Icon, ZoomInIcon } from "lucide-react";
+import { BarChart3Icon, CameraIcon, CheckCircle2Icon, CircleGaugeIcon, CropIcon, CrosshairIcon, DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, ListChecksIcon, LocateFixedIcon, LogOutIcon, MapIcon, MapPinIcon, MoonIcon, MoveIcon, PencilIcon, PlusIcon, RefreshCwIcon, RotateCcwIcon, RotateCwIcon, SunriseIcon, SunsetIcon, SunIcon, TagsIcon, Trash2Icon, ZoomInIcon } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, RadialBar, RadialBarChart, XAxis, YAxis } from "recharts";
 
 type Status = "未拍摄" | "待补拍" | "已毕业";
 type Priority = "低" | "中" | "高";
@@ -375,7 +377,7 @@ export default function Home(){
 </div>
 {view==="library"?<div className="libraryIntroActions"><CurrentWeatherCard/><Button size="lg" onClick={createPoint}><PlusIcon data-icon="inline-start"/>新建点位</Button></div>:view!=="calendar"&&view!=="themes"&&<Button size="lg" onClick={createPoint}><PlusIcon data-icon="inline-start"/>新建点位</Button>}
 </section>
-{view==="coverage"&&<OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={points.filter(point=>point.longitude&&point.latitude).length}/>}</>}
+</>}
 
   {view==="library"&&<section className="workspace">
 <aside className="districtSidebar" aria-label="行政区域筛选">
@@ -488,7 +490,7 @@ export default function Home(){
 
   {view==="calendar"&&<Calendar month={month} setMonth={setMonth} events={calendarEvents} onSave={saveCalendarEvent} onDelete={removeCalendarEvent} onSync={()=>subscribeAppleCalendar(true)}/>}
   {view==="themes"&&<ThemeManager records={themeRecords} points={points} tasks={taskViews} onAdd={addTheme} onRename={renameTheme} onDelete={removeTheme} onOpen={name=>{setCategory(name);setView("library")}} onEdit={openEditor}/>}
-  {view==="coverage"&&<Coverage points={points} tasks={taskViews} categories={themeCategories}/>}
+  {view==="coverage"&&<Coverage points={points} tasks={taskViews} categories={themeCategories} samples={cloudSamples}/>}
   </div>{editing!==null&&selected&&<Editor task={selected} update={p=>update(selected.id,p)} close={()=>setEditing(null)} addStation={()=>addStation(selected.id)} addSamples={f=>addSamples(selected.id,f)}/>}</main>
 }
 
@@ -753,37 +755,61 @@ function ThemeManager({records,points,tasks,onAdd,onRename,onDelete,onOpen,onEdi
 <div className="themeDetailList">{related.length?related.map(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);const state:Status=pointTasks.length&&pointTasks.every(task=>task.status==="已毕业")?"已毕业":pointTasks.some(task=>task.status==="待补拍")?"待补拍":"未拍摄";return <article key={point.id}><div className="themeDetailTitle"><div><span>{point.district}</span><h3>{point.location}</h3></div><span className={`status status-${state}`}>{state}</span></div><div className="themeDetailMeta"><span>点位优先级 {point.priority}</span><span>{pointTasks.length} 个拍摄任务</span><span>{point.stations.length} 个机位</span></div><div className="themeDetailStations"><small>拍摄机位</small><p>{point.stations.length?point.stations.map(station=>`${station.name}${station.description?`（${station.description}）`:""}`).join("；"):"尚未添加机位"}</p></div><p className="themeDetailNote">任务：{pointTasks.length?pointTasks.map(task=>`${task.timeWindow||"自定义"} · ${task.theme}`).join("；"):"尚未创建拍摄任务"}</p><button className="themeTaskEdit" onClick={()=>{setActiveId(null);if(pointTasks[0])onEdit(pointTasks[0].id);else onOpen(active.name)}}>{pointTasks[0]?"查看并编辑任务 →":"在点位库中查看 →"}</button></article>}):<div className="themeDetailEmpty"><strong>暂无关联点位</strong><p>可以先在点位详情中勾选这个创作主题。</p></div>}</div>
 </div></div>}</>}
 
-function Coverage({points,tasks,categories}:{points:PointRecord[];tasks:Task[];categories:string[]}){const districts=[...new Set(points.map(point=>point.district))].map(name=>{const districtPoints=points.filter(point=>point.district===name);const done=districtPoints.filter(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);return pointTasks.length>0&&pointTasks.every(task=>task.status==="已毕业")}).length;return{name,total:districtPoints.length,done}});const categoryStats=categories.map(name=>{const themed=points.filter(point=>point.themeNames.some(theme=>normalizeThemeName(theme)===normalizeThemeName(name)));const done=themed.filter(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);return pointTasks.length>0&&pointTasks.every(task=>task.status==="已毕业")}).length;return{name,total:themed.length,done}}).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,"zh-CN"));return <section className="coverage">
-<div className="coverageIntro">
-<p className="eyebrow">COVERAGE REPORT</p>
-<h2>区域与主题归类覆盖率</h2>
-<p>区域和创作主题均按点位统计；点位下全部拍摄任务完成后计为毕业。</p>
-</div>
-<div className="coverageGrid">
-<article>
-<h3>行政区域覆盖</h3>{districts.map(x=>
-<Bar key={x.name} {...x}/>)}</article>
-<article>
-<h3>主题归类覆盖</h3>{categoryStats.map(x=>
-<Bar key={x.name} {...x}/>)}</article>
-</div>
-<article className="gapList">
-<h3>下一批优先补齐</h3>
-<div>{tasks.filter(t=>t.status!=="已毕业").sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]).slice(0,12).map(t=>
-<span key={t.id}>
-<b>{t.location}</b>{t.themeCategory||"未归类"} · {t.theme} · {t.status}</span>)}</div>
-</article>
-</section>}
-function Bar({name,total,done}:{name:string;total:number;done:number}){const p=Math.round(done/(total||1)*100);return <div className={`barRow ${total===0?"barRow-empty":""}`}>
-<div>
-<span>{name}</span>
-<b>{p}%</b>
-</div>
-<div className="bar">
-<i style={{width:`${p}%`}}/>
-</div>
-<small>{total===0?"暂无关联":`${done} / ${total}`}</small>
-</div>}
+const coverageStatusConfig={unshot:{label:"未拍摄",color:"var(--coverage-unshot)"},redo:{label:"待补拍",color:"var(--coverage-redo)"},done:{label:"已毕业",color:"var(--coverage-done)"}} satisfies ChartConfig;
+const coverageProgressConfig={done:{label:"已毕业点位",color:"var(--coverage-done)"},open:{label:"未毕业点位",color:"var(--coverage-open)"}} satisfies ChartConfig;
+const coverageThemeConfig={total:{label:"关联点位",color:"var(--coverage-primary)"},done:{label:"已毕业点位",color:"var(--coverage-done)"}} satisfies ChartConfig;
+const coverageActivityConfig={planned:{label:"计划任务",color:"var(--coverage-primary)"},samples:{label:"样片入库",color:"var(--coverage-accent)"}} satisfies ChartConfig;
+const completionPercent=(value:number,total:number)=>total?Math.round(value/total*100):0;
+function CoverageMetric({icon:Icon,label,value,detail}:{icon:ComponentType;label:string;value:string;detail:string}){return <Card size="sm" className="coverageMetricCard"><CardHeader><CardDescription>{label}</CardDescription><CardAction><Icon/></CardAction><CardTitle>{value}</CardTitle></CardHeader><CardContent><p>{detail}</p></CardContent></Card>}
+function Coverage({points,tasks,categories,samples}:{points:PointRecord[];tasks:Task[];categories:string[];samples:GallerySample[]}){
+  const pointTasks=new Map(points.map(point=>[point.id,tasks.filter(task=>task.pointId===point.id)]));
+  const pointState=(point:PointRecord):Status=>{const related=pointTasks.get(point.id)||[];return related.length&&related.every(task=>task.status==="已毕业")?"已毕业":related.some(task=>task.status==="待补拍")?"待补拍":"未拍摄"};
+  const graduatedPoints=points.filter(point=>pointState(point)==="已毕业").length;
+  const taskCounts={unshot:tasks.filter(task=>task.status==="未拍摄").length,redo:tasks.filter(task=>task.status==="待补拍").length,done:tasks.filter(task=>task.status==="已毕业").length};
+  const districtStats=[...new Set(points.map(point=>point.district))].map(name=>{const related=points.filter(point=>point.district===name);const done=related.filter(point=>pointState(point)==="已毕业").length;return{name,total:related.length,done,open:related.length-done}}).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,"zh-CN"));
+  const categoryStats=categories.map(name=>{const related=points.filter(point=>point.themeNames.some(theme=>normalizeThemeName(theme)===normalizeThemeName(name)));const done=related.filter(point=>pointState(point)==="已毕业").length;return{name,total:related.length,done,open:related.length-done,percent:completionPercent(done,related.length)}}).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,"zh-CN"));
+  const sampleTaskIds=new Set(samples.map(sample=>String(sample.taskId||"")));
+  const sampledTasks=tasks.filter(task=>sampleTaskIds.has(String(task.id))||(task.samples?.length||0)>0).length;
+  const coordinateReady=points.filter(point=>point.longitude&&point.latitude).length;
+  const stationReady=points.filter(point=>point.stations.length>0).length;
+  const criteriaReady=tasks.filter(task=>task.graduationCriteria?.trim()).length;
+  const reachedThemes=categoryStats.filter(item=>item.total>0).length;
+  const taskStatusData=[{key:"unshot",name:"未拍摄",value:taskCounts.unshot,fill:"var(--color-unshot)"},{key:"redo",name:"待补拍",value:taskCounts.redo,fill:"var(--color-redo)"},{key:"done",name:"已毕业",value:taskCounts.done,fill:"var(--color-done)"}];
+  const pointCompletion=completionPercent(graduatedPoints,points.length);const taskCompletion=completionPercent(taskCounts.done,tasks.length);
+  const windowStats=[...new Set([...shootTimes,...tasks.map(task=>task.timeWindow||inferTimeWindow(task.theme))])].map(name=>{const related=tasks.filter(task=>(task.timeWindow||inferTimeWindow(task.theme))===name);return{name,unshot:related.filter(task=>task.status==="未拍摄").length,redo:related.filter(task=>task.status==="待补拍").length,done:related.filter(task=>task.status==="已毕业").length,total:related.length}}).filter(item=>item.total>0).sort((a,b)=>b.total-a.total);
+  const activityDates=[...tasks.map(task=>task.scheduleDate||""),...samples.map(sample=>sample.uploadedAt||"")].map(value=>new Date(value)).filter(date=>!Number.isNaN(date.getTime()));const latestActivity=activityDates.sort((a,b)=>b.getTime()-a.getTime())[0]||new Date();
+  const activityData=Array.from({length:6},(_,index)=>{const date=new Date(latestActivity.getFullYear(),latestActivity.getMonth()-5+index,1);const key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`;return{month:`${date.getMonth()+1}月`,planned:tasks.filter(task=>task.scheduleDate?.startsWith(key)).length,samples:samples.filter(sample=>{const uploaded=new Date(sample.uploadedAt);return !Number.isNaN(uploaded.getTime())&&uploaded.getFullYear()===date.getFullYear()&&uploaded.getMonth()===date.getMonth()}).length}});
+  const readiness=[{label:"坐标完整度",value:coordinateReady,total:points.length},{label:"机位配置率",value:stationReady,total:points.length},{label:"毕业标准完备率",value:criteriaReady,total:tasks.length},{label:"样片佐证率",value:sampledTasks,total:tasks.length}];
+  const weakestReadiness=[...readiness].sort((a,b)=>completionPercent(a.value,a.total)-completionPercent(b.value,b.total))[0];
+  const districtGap=[...districtStats].sort((a,b)=>b.open-a.open||b.total-a.total)[0];const themeGap=[...categoryStats].filter(item=>item.total>0).sort((a,b)=>a.percent-b.percent||b.open-a.open)[0];const windowGap=[...windowStats].sort((a,b)=>(b.unshot+b.redo)-(a.unshot+a.redo))[0];
+  const openTasks=tasks.filter(task=>task.status!=="已毕业").sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]||(a.status==="待补拍"?-1:1));
+  const totalStations=points.reduce((sum,point)=>sum+point.stations.length,0);
+  return <section className="coverage coverageDashboard">
+    <div className="coverageIntro"><div><p className="eyebrow">COVERAGE INTELLIGENCE</p><h2>摄影资产覆盖分析</h2><p>同时观察点位毕业、任务状态、行政区域、创作主题、拍摄时段与资料完整度；点位下全部任务完成后才计为毕业。</p></div><Badge variant="outline">{points.length} 个点位 · {tasks.length} 条任务 · {samples.length} 张云端样片</Badge></div>
+    <div className="coverageTopGrid">
+      <Card className="coverageCompletionCard"><CardHeader><CardTitle>点位毕业度</CardTitle><CardDescription>全部任务均完成的点位占比</CardDescription><CardAction><CircleGaugeIcon/></CardAction></CardHeader><CardContent><div className="coverageRadial"><ChartContainer config={{completion:{label:"毕业度",color:"var(--coverage-primary)"}}}><RadialBarChart data={[{name:"completion",value:pointCompletion,fill:"var(--color-completion)"}]} startAngle={90} endAngle={-270} innerRadius="74%" outerRadius="100%"><RadialBar dataKey="value" background cornerRadius={18}/></RadialBarChart></ChartContainer><div><strong>{pointCompletion}%</strong><span>{graduatedPoints} / {points.length} 个点位</span></div></div></CardContent><CardFooter><span>任务毕业率</span><strong>{taskCompletion}%</strong></CardFooter></Card>
+      <Card className="coverageStatusCard"><CardHeader><CardTitle>任务状态结构</CardTitle><CardDescription>区分尚未开始、需要补拍与已经毕业</CardDescription><CardAction><ListChecksIcon/></CardAction></CardHeader><CardContent><div className="coverageDonut"><ChartContainer config={coverageStatusConfig}><PieChart accessibilityLayer><ChartTooltip content={<ChartTooltipContent hideLabel nameKey="key"/>}/><Pie data={taskStatusData} dataKey="value" nameKey="key" innerRadius="62%" outerRadius="88%" paddingAngle={3} strokeWidth={0}>{taskStatusData.map(item=><Cell key={item.key} fill={item.fill}/>)}</Pie></PieChart></ChartContainer><div><strong>{tasks.length}</strong><span>全部任务</span></div></div><div className="coverageStatusLegend">{taskStatusData.map(item=><span key={item.key}><i style={{background:item.fill}}/><b>{item.name}</b><em>{item.value}</em></span>)}</div></CardContent></Card>
+      <div className="coverageMetricGrid">
+        <CoverageMetric icon={MapIcon} label="行政区触达" value={`${districtStats.length} / ${chongqingDistricts.length}`} detail={`重庆行政区覆盖 ${completionPercent(districtStats.length,chongqingDistricts.length)}%`}/>
+        <CoverageMetric icon={TagsIcon} label="创作主题触达" value={`${reachedThemes} / ${categories.length}`} detail={`${categories.length-reachedThemes} 个主题尚无关联点位`}/>
+        <CoverageMetric icon={CameraIcon} label="机位准备度" value={`${completionPercent(stationReady,points.length)}%`} detail={`${totalStations} 个机位，${points.length? (totalStations/points.length).toFixed(1):"0"} 个/点位`}/>
+        <CoverageMetric icon={CrosshairIcon} label="坐标完整度" value={`${completionPercent(coordinateReady,points.length)}%`} detail={`${points.length-coordinateReady} 个点位仍缺精确坐标`}/>
+        <CoverageMetric icon={CheckCircle2Icon} label="毕业标准" value={`${completionPercent(criteriaReady,tasks.length)}%`} detail={`${tasks.length-criteriaReady} 条任务尚未定义毕业标准`}/>
+        <CoverageMetric icon={ImagesIcon} label="样片佐证率" value={`${completionPercent(sampledTasks,tasks.length)}%`} detail={`${sampledTasks} 条任务已经关联样片`}/>
+      </div>
+    </div>
+    <div className="coverageChartGrid">
+      <Card><CardHeader><CardTitle>行政区域完成分布</CardTitle><CardDescription>按点位总量排序，比较已毕业与未毕业点位</CardDescription><CardAction><MapPinIcon/></CardAction></CardHeader><CardContent><ChartContainer config={coverageProgressConfig} className="coverageHorizontalChart"><BarChart accessibilityLayer data={districtStats.slice(0,12)} layout="vertical" margin={{left:8,right:12}}><CartesianGrid horizontal={false}/><YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={62}/><XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false}/><ChartTooltip content={<ChartTooltipContent indicator="line"/>}/><ChartLegend content={<ChartLegendContent/>}/><Bar dataKey="done" stackId="district" fill="var(--color-done)" radius={[4,0,0,4]}/><Bar dataKey="open" stackId="district" fill="var(--color-open)" radius={[0,4,4,0]}/></BarChart></ChartContainer></CardContent></Card>
+      <Card><CardHeader><CardTitle>创作主题覆盖</CardTitle><CardDescription>关联点位数量与主题内已毕业点位对比</CardDescription><CardAction><BarChart3Icon/></CardAction></CardHeader><CardContent><ChartContainer config={coverageThemeConfig} className="coverageColumnChart"><BarChart accessibilityLayer data={categoryStats.slice(0,12)} margin={{left:0,right:4}}><CartesianGrid vertical={false}/><XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} tickFormatter={value=>String(value).slice(0,4)}/><YAxis allowDecimals={false} tickLine={false} axisLine={false} width={24}/><ChartTooltip content={<ChartTooltipContent/>}/><ChartLegend content={<ChartLegendContent/>}/><Bar dataKey="total" fill="var(--color-total)" radius={[5,5,0,0]}/><Bar dataKey="done" fill="var(--color-done)" radius={[5,5,0,0]}/></BarChart></ChartContainer></CardContent></Card>
+    </div>
+    <div className="coverageChartGrid coverageSecondaryCharts">
+      <Card><CardHeader><CardTitle>拍摄时段任务结构</CardTitle><CardDescription>日出、日落、蓝调与夜景分别还剩多少任务</CardDescription></CardHeader><CardContent><ChartContainer config={coverageStatusConfig} className="coverageWindowChart"><BarChart accessibilityLayer data={windowStats} layout="vertical" margin={{left:8,right:12}}><CartesianGrid horizontal={false}/><YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={68}/><XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false}/><ChartTooltip content={<ChartTooltipContent indicator="line"/>}/><ChartLegend content={<ChartLegendContent/>}/><Bar dataKey="done" stackId="window" fill="var(--color-done)" radius={[4,0,0,4]}/><Bar dataKey="redo" stackId="window" fill="var(--color-redo)"/><Bar dataKey="unshot" stackId="window" fill="var(--color-unshot)" radius={[0,4,4,0]}/></BarChart></ChartContainer></CardContent></Card>
+      <Card><CardHeader><CardTitle>近六个月活动趋势</CardTitle><CardDescription>拍摄计划与云端样片入库变化</CardDescription></CardHeader><CardContent><ChartContainer config={coverageActivityConfig} className="coverageLineChart"><LineChart accessibilityLayer data={activityData} margin={{left:2,right:12}}><CartesianGrid vertical={false}/><XAxis dataKey="month" tickLine={false} axisLine={false}/><YAxis allowDecimals={false} tickLine={false} axisLine={false} width={24}/><ChartTooltip content={<ChartTooltipContent indicator="line"/>}/><ChartLegend content={<ChartLegendContent/>}/><Line dataKey="planned" type="monotone" stroke="var(--color-planned)" strokeWidth={2.5} dot={{r:3}}/><Line dataKey="samples" type="monotone" stroke="var(--color-samples)" strokeWidth={2.5} dot={{r:3}}/></LineChart></ChartContainer></CardContent></Card>
+    </div>
+    <Card className="coverageInsightCard"><CardHeader><CardTitle>系统归纳</CardTitle><CardDescription>根据当前数据自动提取最值得优先处理的覆盖缺口</CardDescription></CardHeader><CardContent className="coverageInsightGrid"><article><span>区域缺口</span><strong>{districtGap?.name||"暂无数据"}</strong><p>{districtGap?`还有 ${districtGap.open} 个点位未毕业，共 ${districtGap.total} 个点位。`:"添加点位后将自动分析。"}</p></article><article><span>主题短板</span><strong>{themeGap?.name||"暂无关联主题"}</strong><p>{themeGap?`毕业度 ${themeGap.percent}%，还有 ${themeGap.open} 个关联点位未完成。`:"先为点位关联创作主题。"}</p></article><article><span>时段缺口</span><strong>{windowGap?.name||"暂无任务"}</strong><p>{windowGap?`未完成 ${windowGap.unshot+windowGap.redo} 条，其中 ${windowGap.redo} 条待补拍。`:"创建拍摄任务后将自动分析。"}</p></article><article><span>资料短板</span><strong>{weakestReadiness?.label||"暂无数据"}</strong><p>{weakestReadiness?`当前 ${weakestReadiness.value} / ${weakestReadiness.total}，完整度 ${completionPercent(weakestReadiness.value,weakestReadiness.total)}%。`:"暂无需要补齐的资料。"}</p></article></CardContent></Card>
+    <Card className="coveragePriorityCard"><CardHeader><CardTitle>下一批优先补齐</CardTitle><CardDescription>优先级、补拍状态和资料缺口综合排序，展示前 12 条</CardDescription><CardAction><Badge variant={openTasks.some(task=>task.priority==="高")?"destructive":"secondary"}>{openTasks.length} 条未毕业</Badge></CardAction></CardHeader><CardContent><div className="coveragePriorityList">{openTasks.slice(0,12).map(task=>{const point=points.find(item=>item.id===task.pointId);const missing=[!point?.longitude||!point?.latitude?"缺坐标":"",!point?.stations.length?"缺机位":"",!task.graduationCriteria?.trim()?"缺毕业标准":"",!sampleTaskIds.has(String(task.id))&&!(task.samples?.length||0)?"缺样片":"",task.status==="待补拍"&&!task.retakeReason?.trim()?"缺补拍原因":""].filter(Boolean);return <article key={task.id}><div><Badge variant={task.priority==="高"?"destructive":task.priority==="中"?"default":"secondary"}>{task.priority}优先</Badge><Badge variant="outline">{task.status}</Badge></div><strong>{task.location}</strong><p>{task.timeWindow||inferTimeWindow(task.theme)} · {task.themeCategory||"未归类"} · {task.theme}</p><footer>{missing.length?missing.map(item=><Badge variant="outline" key={item}>{item}</Badge>):<Badge variant="secondary">资料齐全</Badge>}</footer></article>})}{!openTasks.length&&<Empty className="coverageEmpty"><EmptyHeader><EmptyMedia variant="icon"><CheckCircle2Icon/></EmptyMedia><EmptyTitle>所有任务均已毕业</EmptyTitle><EmptyDescription>当前没有需要优先补齐的拍摄任务。</EmptyDescription></EmptyHeader></Empty>}</div></CardContent></Card>
+  </section>
+}
 
 function Editor({task,update,close,addStation,addSamples}:{task:Task;update:(p:Partial<Task>)=>void;close:()=>void;addStation:()=>void;addSamples:(f:FileList|null)=>void}){return <div className="modal editorModal">
 <div className="editor">

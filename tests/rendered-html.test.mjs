@@ -93,7 +93,7 @@ test("mobile navigation, calendar creation and route selection remain reachable"
   assert.match(css, /@media\(max-width:720px\)\{[\s\S]*?\.topbar nav\{display:flex/);
 });
 
-test("astronomy card uses one photographic light timeline and coverage keeps empty themes visible", async () => {
+test("astronomy uses one light timeline and coverage reports multiple dimensions", async () => {
   const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(source, /suppressHydrationWarning/);
@@ -104,6 +104,14 @@ test("astronomy card uses one photographic light timeline and coverage keeps emp
   assert.match(css, /--astro-moon:#70a9ff/);
   assert.match(css, /\.astroEvents\{display:grid;grid-template-columns:repeat\(6/);
   assert.match(css, /\[data-theme="light"\] \.astronomyHero/);
-  assert.match(source, /total===0\?"暂无关联"/);
-  assert.doesNotMatch(source, /categoryStats=[\s\S]*?\.filter\(item=>item\.total>0\)/);
+  assert.match(source, /const categoryStats=categories\.map/);
+  assert.match(source, /coverageStatusConfig/);
+  assert.match(source, /<RadialBarChart/);
+  assert.match(source, /className="coverageChartGrid"/);
+  assert.match(source, /className="coverageLineChart"/);
+  assert.match(source, /坐标完整度/);
+  assert.match(source, /毕业标准完备率/);
+  assert.match(source, /系统归纳/);
+  assert.match(css, /\.coverageTopGrid\{display:grid/);
+  assert.match(css, /\.coverageInsightGrid\{display:grid/);
 });
