@@ -55,3 +55,17 @@ test("gallery edit controls are independent from the sample card opener", async 
   assert.match(source, /setActive\(item\);setDraft\([\s\S]*?if\(!\(await ensureAdmin\(\)\)\)return;setEditingMeta\(true\)/);
   assert.match(css, /\.lightbox\{[^}]*z-index:40/);
 });
+
+test("map weather includes layered cloud forecasts and calendar includes moon status", async () => {
+  const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  const weather = await readFile(new URL("../app/api/weather/route.ts", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  for (const field of ["cloud_cover_low", "cloud_cover_mid", "cloud_cover_high", "visibility", "wind_gusts_10m"]) {
+    assert.match(weather, new RegExp(field));
+  }
+  assert.match(source, /\u672a\u6765 48 \u5c0f\u65f6\u4e91\u5c42/);
+  assert.match(source, /moonStatusForDate/);
+  assert.match(source, /className="dayMoon"/);
+  assert.match(css, /\.cloudLayer/);
+  assert.match(css, /\.dayMoon/);
+});
