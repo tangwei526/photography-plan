@@ -562,3 +562,19 @@ body{
 /* 拍摄日历：每个日期同时显示月相与照明比例 */
 .dayHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:5px;min-height:25px}.dayHeader>span:first-child{color:var(--ink);font-size:12px;font-weight:750}.dayMoon{display:flex;align-items:center;gap:3px;max-width:80px;padding:2px 5px;border:1px solid color-mix(in srgb,var(--soft-edge) 76%,transparent);border-radius:999px;background:var(--surface);box-shadow:var(--soft-inset-small);color:var(--muted-foreground)}.dayMoon b{font-size:11px;line-height:1}.dayMoon small{overflow:hidden;font-size:7px;white-space:nowrap;text-overflow:ellipsis}
 @media(max-width:900px){.weatherNowMetrics{grid-template-columns:repeat(2,minmax(0,1fr))}.cloudHourList{max-height:none}.dayMoon small{display:none}.dayMoon{padding:2px 4px}}
+
+/* 整站巡检修复：渐进加载、可搜索路线、可触达日历入口与移动导航 */
+.progressiveLoad{display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0 4px;padding:14px;border:1px solid var(--soft-edge);border-radius:14px;background:var(--surface);box-shadow:var(--soft-inset-small);color:var(--muted-foreground);font-size:9px}
+.routeSearch{display:grid;gap:6px;margin-top:12px}.routeSearch>span{color:var(--muted-foreground);font-size:8px;font-weight:700}.routeSearch [data-slot="input"]{height:35px;background:var(--surface);box-shadow:var(--soft-inset-small);font-size:10px}.routeEmpty{margin:0;padding:20px;text-align:center;color:var(--muted-foreground);font-size:9px}
+.dayHeaderActions{display:flex;align-items:center;gap:4px}.dayAdd{display:grid;place-items:center;width:24px;height:24px;padding:0;border:1px solid var(--soft-edge);border-radius:8px;background:var(--surface);color:var(--accent);box-shadow:var(--soft-raised-small);opacity:0;transform:translateY(-2px);transition:opacity .14s ease-out,transform .14s ease-out,box-shadow .14s ease-out}.dayAdd svg{width:13px;height:13px}.day:hover .dayAdd,.day:focus-within .dayAdd{opacity:1;transform:none}.dayAdd:active{box-shadow:var(--soft-inset-small)}
+.barRow-empty{opacity:.68}.barRow-empty .bar i{width:0!important}.barRow-empty small{white-space:nowrap}
+@media(max-width:900px){.desktopHeaderAction{display:none!important}}
+@media(hover:none){.dayAdd{opacity:1;transform:none}}
+@media(max-width:720px){
+  .topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;height:auto;min-height:0;padding:8px 10px 0;gap:7px 8px}
+  .brand{grid-column:1;grid-row:1;min-width:0}.brand>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .headerActions{grid-column:2;grid-row:1;justify-self:end}.headerActions [data-slot="button"]{min-width:36px}.headerActions [data-slot="button"] [data-icon="inline-start"]{margin-right:0}.headerActions [data-slot="button"]{font-size:0}.headerActions [data-slot="button"] svg{width:16px;height:16px}
+  .topbar nav{display:flex;grid-column:1/-1;grid-row:2;width:calc(100% + 20px);max-width:none;height:auto;margin:0 -10px;padding:4px 10px 8px;border-radius:0;background:transparent;box-shadow:none;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+  .topbar nav::-webkit-scrollbar{display:none}.topbar nav button{flex:0 0 auto;min-height:38px;padding:0 12px;white-space:nowrap;font-size:10px}
+  .shell{padding-top:18px}.toast{top:116px}.progressiveLoad{align-items:stretch;flex-direction:column;text-align:center}.progressiveLoad [data-slot="button"]{width:100%}
+}

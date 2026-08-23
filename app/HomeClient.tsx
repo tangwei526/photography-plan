@@ -153,7 +153,7 @@ function AstronomyHero(){
   useEffect(()=>{let active=true;setFailed(false);fetch(`${astronomyApi}?date=${dateKey}`).then(response=>{if(!response.ok)throw new Error();return response.json()}).then(value=>{if(active)setData(value)}).catch(()=>{if(active)setFailed(true)});return()=>{active=false}},[dateKey]);
   const phase=data?.moonPhase??0;const events=[{label:"月出",time:data?.moonrise,color:"moon"},{label:"晨间蓝调",time:data?.dawn,color:"blue"},{label:"日出",time:data?.sunrise,color:"sun"},{label:"月落",time:data?.moonset,color:"moon"},{label:"日落",time:data?.sunset,color:"sun"},{label:"晚间蓝调",time:data?.dusk,color:"blue"}];
   return <section className="astronomyHero" aria-label="今日天象与拍摄时间窗口">
-    <div className="astroLead"><span className="astroLocation">重庆市 · 今日光线窗口</span><strong>{now.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}</strong><p>{now.toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</p><small>{lunarDate(now)}</small></div>
+    <div className="astroLead"><span className="astroLocation">重庆市 · 今日光线窗口</span><strong suppressHydrationWarning>{now.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}</strong><p suppressHydrationWarning>{now.toLocaleDateString("zh-CN",{year:"numeric",month:"long",day:"numeric",weekday:"long"})}</p><small suppressHydrationWarning>{lunarDate(now)}</small></div>
     <div className="astroMoon"><span className="moonGlyph" aria-hidden="true">{moonSymbol(phase)}</span><div><strong>{Math.round(data?.moonIllumination??0)}%</strong><span>{moonLabel(phase)}</span></div></div>
     <div className="astroTimeline">{events.map(event=><div className={`astroEvent astro-${event.color}`} key={event.label}><i/><small>{event.label}</small><strong>{event.time||"--:--"}</strong></div>)}</div>
     <div className="astroFoot"><span>● 太阳轨迹</span><span>● 月亮轨迹</span>{failed&&<em>天象数据暂未更新，稍后将自动重试</em>}</div>
@@ -214,7 +214,7 @@ function OverviewStats({pointCount,districtCount,counts,scheduleCount,coordinate
 export default function Home(){
   const [points,setPoints]=useState<PointRecord[]>(baseWorkspace.points); const [tasks,setTasks]=useState<Task[]>(baseTasks); const [hydrated,setHydrated]=useState(false); const [view,setView]=useState<View>("library");
   const [themeMode,setThemeMode]=useState<"light"|"dark">("dark");
-  const [district,setDistrict]=useState("全部行政区"); const [status,setStatus]=useState("全部状态"); const [priority,setPriority]=useState("全部优先级"); const [category,setCategory]=useState("全部归类"); const [query,setQuery]=useState("");
+  const [district,setDistrict]=useState("全部行政区"); const [status,setStatus]=useState("全部状态"); const [priority,setPriority]=useState("全部优先级"); const [category,setCategory]=useState("全部归类"); const [query,setQuery]=useState(""); const [pointPage,setPointPage]=useState({key:"",limit:48}); const [routeQuery,setRouteQuery]=useState("");
   const [expanded,setExpanded]=useState<string|null>(null); const [pointEditOnOpen,setPointEditOnOpen]=useState(false); const [editing,setEditing]=useState<number|null>(null); const [mapTask,setMapTask]=useState<number|null>(null);
   const [routeIds,setRouteIds]=useState<number[]>([]); const [route,setRoute]=useState<RouteInfo|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [amapLocating,setAmapLocating]=useState(false); const amapSyncing=useRef(false);
   const [weather,setWeather]=useState<WeatherDay[]>([]); const [weatherCurrent,setWeatherCurrent]=useState<WeatherNow|null>(null); const [weatherHours,setWeatherHours]=useState<WeatherHour[]>([]); const [weatherLoading,setWeatherLoading]=useState(false); const [weatherError,setWeatherError]=useState(""); const [month,setMonth]=useState(currentMonth);
@@ -246,8 +246,10 @@ export default function Home(){
   const groups=useMemo(()=>group(points,taskViews),[points,taskViews]); const districts=useMemo(()=>[...new Set(points.map(point=>point.district))],[points]); const availableDistricts=useMemo(()=>[...new Set([...chongqingDistricts,...districts])],[districts]); const activeGroup=groups.find(item=>item.key===expanded);
   const cloudSampleCountByTask=useMemo(()=>cloudSamples.reduce<Record<string,number>>((counts,sample)=>{const taskId=String(sample.taskId||"");if(taskId)counts[taskId]=(counts[taskId]||0)+1;return counts},{}),[cloudSamples]);
   const filtered=useMemo(()=>groups.filter(g=>(district==="全部行政区"||g.district===district)&&(status==="全部状态"||g.status===status)&&(priority==="全部优先级"||g.priority===priority)&&(category==="全部归类"||g.themeNames.includes(category))&&`${g.location} ${g.district} ${g.themeNames.join(" ")} ${g.tasks.map(t=>`${t.timeWindow||""} ${t.theme} ${t.methods} ${t.note}`).join(" ")}`.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]),[groups,district,status,priority,category,query]);
+  const pointFilterKey=`${district}\u0000${status}\u0000${priority}\u0000${category}\u0000${query}`;const pointDisplayLimit=pointPage.key===pointFilterKey?pointPage.limit:48;
   const counts={unshot:tasks.filter(t=>t.status==="未拍摄").length,redo:tasks.filter(t=>t.status==="待补拍").length,done:tasks.filter(t=>t.status==="已毕业").length};
-  const mappedTasks=groups.map((groupItem,index)=>groupItem.tasks[0]||({id:-(index+1),pointId:groupItem.point.id,district:groupItem.district,location:groupItem.location,priority:groupItem.priority,theme:"待创建拍摄任务",timeWindow:"自定义",methods:[],media:[],clarity:"低",status:"未拍摄",note:"",sourceRow:0,longitude:groupItem.point.longitude,latitude:groupItem.point.latitude,coordinateSystem:groupItem.point.coordinateSystem,stations:groupItem.stations,samples:[]} as Task));
+  const mappedTasks=useMemo(()=>groups.map((groupItem,index)=>groupItem.tasks[0]||({id:-(index+1),pointId:groupItem.point.id,district:groupItem.district,location:groupItem.location,priority:groupItem.priority,theme:"待创建拍摄任务",timeWindow:"自定义",methods:[],media:[],clarity:"低",status:"未拍摄",note:"",sourceRow:0,longitude:groupItem.point.longitude,latitude:groupItem.point.latitude,coordinateSystem:groupItem.point.coordinateSystem,stations:groupItem.stations,samples:[]} as Task)),[groups]);
+  const routeCandidates=useMemo(()=>mappedTasks.filter(item=>`${item.location} ${item.district}`.toLowerCase().includes(routeQuery.trim().toLowerCase())),[mappedTasks,routeQuery]);
   const selected=taskViews.find(t=>t.id===(editing??mapTask)); const selectedMapTask=mapTask===null?undefined:mappedTasks.find(t=>t.id===mapTask);
   useEffect(()=>{if(view==="map"&&mapTask===null&&mappedTasks.length)loadWeather(mappedTasks[0])},[view,mapTask]);
   const update=(id:number,patch:Partial<Task>)=>{const current=tasks.find(task=>task.id===id);if(!current)return;const {stations,...taskPatch}=patch;if(stations){const valid=new Set(stations.map(station=>station.id));setPoints(items=>items.map(point=>point.id===current.pointId?{...point,stations}:point));setTasks(items=>items.map(task=>task.pointId===current.pointId?{...task,stationIds:(task.stationIds||[]).filter(stationId=>valid.has(stationId)),...(task.id===id?taskPatch:{})}:task))}else setTasks(items=>items.map(task=>task.id===id?{...task,...taskPatch}:task))};
@@ -261,7 +263,7 @@ export default function Home(){
   function exportExcel(){const rows=taskViews.map(t=>{const point=points.find(item=>item.id===t.pointId);return{行政区域:t.district,点位名称:t.location,点位优先级:point?.priority||t.priority,拍摄任务:t.theme,拍摄时间:t.timeWindow||"自定义",创作主题:(point?.themeNames||[]).join("、"),拍摄方式:t.methods.join("、"),素材类型:t.media.join("、"),通透度要求:t.clarity,拍摄状态:t.status,计划日期:t.scheduleDate||"",计划时段:t.scheduleSlot||"",关联机位:(t.stationIds||[]).map(id=>point?.stations.find(station=>station.id===id)?.name).filter(Boolean).join("、"),全部机位:(point?.stations||[]).map(station=>station.name).join("、"),补拍原因:t.retakeReason||"",缺失镜头:t.missingShots||"",毕业标准:t.graduationCriteria||"",样片链接:(t.samples||[]).map(s=>s.url.startsWith("data:")?"本地样片":s.url).join("、"),备注:t.note}});const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"规范化点位数据");XLSX.writeFile(wb,`重庆拍摄点位_${new Date().toISOString().slice(0,10)}.xlsx`)}
   async function loadWeather(t:Task){setMapTask(t.id);setWeatherLoading(true);setWeatherError("");const [lat,lon]=coord(t);try{const response=await fetch(`${weatherApi}?lat=${lat}&lon=${lon}`,{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"天气读取失败");setWeatherCurrent(data.current||null);setWeatherHours(Array.isArray(data.hours)?data.hours:[]);setWeather(Array.isArray(data.days)?data.days:[])}catch(reason){setWeatherCurrent(null);setWeatherHours([]);setWeather([]);setWeatherError(reason instanceof Error?reason.message:"天气读取失败，请稍后重试")}finally{setWeatherLoading(false)}}
   async function locateAllPoints(){if(amapSyncing.current)return;const missing=points.filter(point=>!point.longitude||!point.latitude);const gps=points.filter(point=>point.longitude&&point.latitude&&point.coordinateSystem!=="gcj02");if(!missing.length&&!gps.length)return;amapSyncing.current=true;setAmapLocating(true);try{const updates=new Map<string,{longitude:number;latitude:number}>();for(let i=0;i<missing.length;i+=20){const batch=missing.slice(i,i+20);const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"locate",items:batch.map(point=>({key:point.id,district:point.district,location:point.location}))})});const data=await response.json();if(!response.ok)throw new Error(data.error||"点位解析失败");for(const item of data.items||[])if(item.longitude&&item.latitude)updates.set(item.key,{longitude:item.longitude,latitude:item.latitude})}for(let i=0;i<gps.length;i+=40){const batch=gps.slice(i,i+40);const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"convert",items:batch.map(point=>({key:point.id,longitude:point.longitude,latitude:point.latitude}))})});const data=await response.json();if(!response.ok)throw new Error(data.error||"坐标转换失败");for(const item of data.items||[])if(item.longitude&&item.latitude)updates.set(item.key,{longitude:item.longitude,latitude:item.latitude})}if(updates.size)setPoints(items=>items.map(point=>{const found=updates.get(point.id);return found?{...point,...found,coordinateSystem:"gcj02"}:point}))}catch(reason){alert(reason instanceof Error?reason.message:"暂时无法定位全部点位")}finally{setAmapLocating(false);amapSyncing.current=false}}
-  async function planRoute(){const pts=routeIds.map(id=>taskViews.find(t=>t.id===id)).filter(Boolean) as Task[];if(pts.length<2)return;setRouteLoading(true);try{const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"route",locations:pts.map(task=>{const [latitude,longitude]=task.latitude&&task.longitude?[task.latitude,task.longitude]:coord(task);return[longitude,latitude]})})});const data=await response.json();setRoute(response.ok&&data.route?data.route:null)}catch{setRoute(null)}finally{setRouteLoading(false)}}
+  async function planRoute(){const pts=routeIds.map(id=>mappedTasks.find(t=>t.id===id)).filter(Boolean) as Task[];if(pts.length<2)return;setRouteLoading(true);try{const response=await fetch("/api/amap-locate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:"route",locations:pts.map(task=>{const [latitude,longitude]=task.latitude&&task.longitude?[task.latitude,task.longitude]:coord(task);return[longitude,latitude]})})});const data=await response.json();setRoute(response.ok&&data.route?data.route:null)}catch{setRoute(null)}finally{setRouteLoading(false)}}
   function addStation(id:number){const task=tasks.find(item=>item.id===id);const point=points.find(item=>item.id===task?.pointId);if(!task||!point)return;const station={id:crypto.randomUUID(),name:`机位 ${point.stations.length+1}`,description:"待勘景"};setPoints(items=>items.map(item=>item.id===point.id?{...item,stations:[...item.stations,station]}:item));setTasks(items=>items.map(item=>item.id===id?{...item,stationIds:[...(item.stationIds||[]),station.id]}:item))}
   async function addSamples(id:number,files:FileList|null){if(!files)return;const t=tasks.find(x=>x.id===id);if(!t)return;const accepted=[...files].filter(f=>f.size<=1200000).slice(0,6-(t.samples?.length||0));const samples=await Promise.all(accepted.map(f=>new Promise<Sample>(resolve=>{const r=new FileReader();r.onload=()=>resolve({id:crypto.randomUUID(),name:f.name,url:String(r.result)});r.readAsDataURL(f)})));update(id,{samples:[...(t.samples||[]),...samples]})}
   async function openEditor(id:number){if(await ensureAdmin()){setEditing(id);return true}return false}
@@ -292,9 +294,9 @@ export default function Home(){
 <button key={x.id} className={view===x.id?"navActive":""} onClick={()=>openView(x.id)}>{x.label}</button>)}</nav>
 <div className="headerActions">
 <Tooltip><TooltipTrigger render={<Button variant="outline" size="sm"/>} onClick={toggleTheme} aria-label={themeMode==="dark"?"切换到浅色模式":"切换到暗黑模式"}>{themeMode==="dark"?<SunIcon data-icon="inline-start"/>:<MoonIcon data-icon="inline-start"/>}{themeMode==="dark"?"浅色":"暗色"}</TooltipTrigger><TooltipContent>切换网站配色</TooltipContent></Tooltip>
-<Button variant="outline" size="sm" onClick={async()=>{if(await ensureAdmin())inputRef.current?.click()}}><FileUpIcon data-icon="inline-start"/>导入 Excel</Button>
-<a className={buttonVariants({variant:"outline",size:"sm"})} href={`${assetBase}摄影点位导入模板.xlsx`} download><DownloadIcon data-icon="inline-start"/>下载模板</a>
-<Button size="sm" onClick={exportExcel}><FileDownIcon data-icon="inline-start"/>导出修改</Button>
+<Button className="desktopHeaderAction" variant="outline" size="sm" onClick={async()=>{if(await ensureAdmin())inputRef.current?.click()}}><FileUpIcon data-icon="inline-start"/>导入 Excel</Button>
+<a className={`${buttonVariants({variant:"outline",size:"sm"})} desktopHeaderAction`} href={`${assetBase}摄影点位导入模板.xlsx`} download><DownloadIcon data-icon="inline-start"/>下载模板</a>
+<Button className="desktopHeaderAction" size="sm" onClick={exportExcel}><FileDownIcon data-icon="inline-start"/>导出修改</Button>
 <Tooltip><TooltipTrigger render={<Button variant="ghost" size="icon-sm"/>} onClick={logout} aria-label="退出登录"><LogOutIcon/></TooltipTrigger><TooltipContent>退出登录</TooltipContent></Tooltip>
 <input ref={inputRef} hidden type="file" accept=".xlsx,.xls" onChange={e=>e.target.files?.[0]&&importExcel(e.target.files[0])}/>
 </div>
@@ -309,7 +311,7 @@ export default function Home(){
         <FieldGroup className="py-4">
           <Field data-invalid={Boolean(adminError)||undefined}>
             <FieldLabel htmlFor="admin-key">管理密钥</FieldLabel>
-            <Input id="admin-key" type="password" autoComplete="current-password" autoFocus value={adminKey} onChange={event=>setAdminKey(event.target.value)} aria-invalid={Boolean(adminError)} disabled={adminChecking}/>
+            <Input id="admin-key" type="password" autoComplete="current-password" value={adminKey} onChange={event=>setAdminKey(event.target.value)} aria-invalid={Boolean(adminError)} disabled={adminChecking}/>
             {adminError&&<FieldError>{adminError}</FieldError>}
           </Field>
         </FieldGroup>
@@ -367,10 +369,10 @@ export default function Home(){
 </div>
 </div>
 <div className="listHead">
-<span>显示 {filtered.length} 个点位</span>
+<span>已显示 {Math.min(pointDisplayLimit,filtered.length)} / {filtered.length} 个点位</span>
 <small>按优先级排序 · 点击卡片直接编辑点位</small>
 </div>
-<div className="spotList">{filtered.map(g=>{
+<div className="spotList">{filtered.slice(0,pointDisplayLimit).map(g=>{
   const doneTasks=g.tasks.filter(task=>task.status==="已毕业");
   const unshotTasks=g.tasks.filter(task=>task.status==="未拍摄");
   const retakeTasks=g.tasks.filter(task=>task.status==="待补拍");
@@ -398,6 +400,7 @@ export default function Home(){
   <div className="pointCardMeta"><span><CameraIcon aria-hidden="true"/>{g.stations.length} 个机位</span><span><ImagesIcon aria-hidden="true"/>{sampleCount} 张样片</span><span className={g.point.longitude&&g.point.latitude?"":"missing"}><MapPinIcon aria-hidden="true"/>{g.point.longitude&&g.point.latitude?"已定位":"待定位"}</span></div>
   </button><div className="pointCardActions"><Tooltip><TooltipTrigger render={<Button variant="secondary" size="icon-sm"/>} aria-label={`编辑${g.location}`} onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}><PencilIcon/></TooltipTrigger><TooltipContent>编辑点位</TooltipContent></Tooltip><Tooltip><TooltipTrigger render={<Button variant="destructive" size="icon-sm"/>} aria-label={`删除${g.location}`} onClick={()=>removePointGroup(g)}><Trash2Icon/></TooltipTrigger><TooltipContent>删除点位</TooltipContent></Tooltip></div></article>
 })}</div>
+{filtered.length>pointDisplayLimit&&<div className="progressiveLoad"><span>为保证浏览流畅，点位按批次加载</span><Button variant="outline" onClick={()=>setPointPage({key:pointFilterKey,limit:pointDisplayLimit+48})}>再加载 {Math.min(48,filtered.length-pointDisplayLimit)} 个点位</Button></div>}
 </div>
 </section>}
 
@@ -420,13 +423,14 @@ export default function Home(){
 </div>
 <aside className="mapSide">
 <h2>拍摄路线</h2>
-<p className="sub">选择 2–8 个主题任务，按选择顺序规划驾车路线。</p>
-<div className="routePicker">{taskViews.slice(0,80).map(t=>
+<p className="sub">每个点位只出现一次；选择 2–8 个点位，按选择顺序规划驾车路线。</p>
+<label className="routeSearch" htmlFor="route-search"><span>搜索路线点位</span><Input id="route-search" value={routeQuery} onChange={event=>setRouteQuery(event.target.value)} placeholder="输入点位或行政区"/></label>
+<div className="routePicker" aria-label="路线点位选择">{routeCandidates.map(t=>
 <label key={t.id}>
 <input type="checkbox" checked={routeIds.includes(t.id)} disabled={!routeIds.includes(t.id)&&routeIds.length>=8} onChange={e=>setRouteIds(x=>e.target.checked?[...x,t.id]:x.filter(id=>id!==t.id))}/>
 <span>{t.location}</span>
-<small>{t.theme}</small>
-</label>)}</div>
+<small>{t.district}</small>
+</label>)}{!routeCandidates.length&&<p className="routeEmpty">没有匹配的点位</p>}</div>
 <button className="primary full" onClick={planRoute} disabled={routeIds.length<2||routeLoading}>{routeLoading?"正在规划…":`规划 ${routeIds.length} 个点位`}</button>{route&&<div className="routeResult">
 <strong>{(route.distance/1000).toFixed(1)} km</strong>
 <span>预计驾车 {Math.round(route.duration/60)} 分钟</span>
@@ -475,6 +479,7 @@ function PointDetailModal({point,initialEditing,districts,categories,onClose,onS
 function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEdit}:{tasks:Task[];points:PointRecord[];categories:string[];ensureAdmin:()=>Promise<boolean>;onRemoteSamplesChange:(samples:GallerySample[])=>void;onEdit:(id:number)=>void}){
   const [remote,setRemote]=useState<GallerySample[]>(()=>readGalleryInventoryCache()?.items||[]); const [loading,setLoading]=useState(()=>!readGalleryInventoryCache()); const [error,setError]=useState("");
   const [query,setQuery]=useState(""); const [district,setDistrict]=useState("全部行政区"); const [theme,setTheme]=useState("全部主题"); const [category,setCategory]=useState("全部归类");
+  const [galleryPage,setGalleryPage]=useState({key:"",limit:60});
   const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState(""); const [uploadError,setUploadError]=useState("");
   const [editingMeta,setEditingMeta]=useState(false); const [savingMeta,setSavingMeta]=useState(false); const [editError,setEditError]=useState("");
   const [draggedGroup,setDraggedGroup]=useState<string|null>(null);const [dropTarget,setDropTarget]=useState<string|null>(null);const [pendingMerge,setPendingMerge]=useState<{source:string;target:string}|null>(null);const [merging,setMerging]=useState(false);
@@ -489,6 +494,7 @@ function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEd
   const all=[...remote,...local]; const districts=[...new Set(all.map(x=>x.district).filter(Boolean))]; const themes=[...new Set(all.map(x=>x.theme).filter(Boolean))];
   const shown=all.filter(x=>(district==="全部行政区"||x.district===district)&&(theme==="全部主题"||x.theme===theme)&&(category==="全部归类"||(x.themeCategory||"")===category)&&`${x.location} ${x.stationName} ${x.device||""} ${x.shootTime||""} ${x.themeCategory||"未归类"} ${x.theme} ${x.subjectDescription||""} ${x.note} ${x.originalName}`.toLowerCase().includes(query.toLowerCase()));
   const sampleGroups=useMemo(()=>{const grouped=new Map<string,GallerySample[]>();for(const item of shown){const key=item.groupId?`group:${item.groupId}`:`sample:${item.id}`;grouped.set(key,[...(grouped.get(key)||[]),item])}return [...grouped].map(([key,samples])=>({key,samples,cover:samples[0]}))},[shown]);
+  const galleryFilterKey=`${district}\u0000${theme}\u0000${category}\u0000${query}`;const groupDisplayLimit=galleryPage.key===galleryFilterKey?galleryPage.limit:60;
   const activeSamples=active?(sampleGroups.find(item=>item.samples.some(sample=>sample.id===active.id))?.samples||[active]):[];
   const pickedTask=tasks.find(t=>String(t.id)===taskId);
   const activeTask=active?tasks.find(t=>String(t.id)===active.taskId):undefined;
@@ -583,8 +589,8 @@ function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEd
 <select value={theme} onChange={e=>setTheme(e.target.value)}>
 <option>全部主题</option>{themes.map(x=>
 <option key={x}>{x}</option>)}</select>
-<span>{shown.length} 张样片 · {sampleGroups.length} 组</span>
-</div>{loading?<Empty className="galleryEmpty"><EmptyHeader><EmptyMedia variant="icon"><Spinner/></EmptyMedia><EmptyTitle>正在整理样片</EmptyTitle><EmptyDescription>正在加载云端照片和机位信息。</EmptyDescription></EmptyHeader></Empty>:shown.length?<div className="masonry">{sampleGroups.map(groupItem=>{const item=groupItem.cover;return <article className={`sampleCard ${draggedGroup===groupItem.key?"sampleDragging":""} ${dropTarget===groupItem.key?"sampleDropTarget":""}`} key={groupItem.key} data-gallery-group={groupItem.key} draggable={!item.local} onDragStart={event=>{event.dataTransfer.effectAllowed="move";setDraggedGroup(groupItem.key)}} onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect="move";setDropTarget(groupItem.key)}} onDragLeave={()=>setDropTarget(current=>current===groupItem.key?null:current)} onDrop={event=>{event.preventDefault();prepareMerge(draggedGroup,groupItem.key)}} onDragEnd={()=>{setDraggedGroup(null);setDropTarget(null)}} onPointerDown={event=>pointerDown(groupItem.key,event)} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd}>
+<span>{shown.length} 张样片 · 已显示 {Math.min(groupDisplayLimit,sampleGroups.length)} / {sampleGroups.length} 组</span>
+</div>{loading?<Empty className="galleryEmpty"><EmptyHeader><EmptyMedia variant="icon"><Spinner/></EmptyMedia><EmptyTitle>正在整理样片</EmptyTitle><EmptyDescription>正在加载云端照片和机位信息。</EmptyDescription></EmptyHeader></Empty>:shown.length?<><div className="masonry">{sampleGroups.slice(0,groupDisplayLimit).map(groupItem=>{const item=groupItem.cover;return <article className={`sampleCard ${draggedGroup===groupItem.key?"sampleDragging":""} ${dropTarget===groupItem.key?"sampleDropTarget":""}`} key={groupItem.key} data-gallery-group={groupItem.key} draggable={!item.local} onDragStart={event=>{event.dataTransfer.effectAllowed="move";setDraggedGroup(groupItem.key)}} onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect="move";setDropTarget(groupItem.key)}} onDragLeave={()=>setDropTarget(current=>current===groupItem.key?null:current)} onDrop={event=>{event.preventDefault();prepareMerge(draggedGroup,groupItem.key)}} onDragEnd={()=>{setDraggedGroup(null);setDropTarget(null)}} onPointerDown={event=>pointerDown(groupItem.key,event)} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd}>
 <button type="button" className="sampleCardOpen" aria-label={`查看${item.originalName||"样片"}`} onClick={event=>{if(suppressClick.current){event.preventDefault();return}setActive(item)}}>
 {broken.has(item.id)?<span className="brokenSample"><b>图片无法显示</b><small>点击查看并重新上传</small></span>:<img src={item.url} alt={`${item.location} ${item.stationName}`} loading="lazy" decoding="async" fetchPriority="low" onError={()=>setBroken(items=>new Set(items).add(item.id))}/>}{groupItem.samples.length>1&&<b className="sampleCount">组图 · {groupItem.samples.length} 张</b>}
 <span>
@@ -592,7 +598,7 @@ function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEd
 <small>{item.stationName||"未关联机位"}{item.device?` · ${item.device}`:""}{item.shootTime?` · ${item.shootTime}`:""}</small>
 </span>
 </button><div className="sampleCardActions" onPointerDown={event=>event.stopPropagation()}><Button type="button" variant="secondary" size="icon-sm" aria-label={`编辑${item.originalName||"样片"}`} title="编辑样片" disabled={item.local} onClick={()=>startEdit(item)}><PencilIcon/></Button><Button type="button" variant="destructive" size="icon-sm" aria-label={`删除${item.originalName||"样片"}`} title="删除样片" disabled={item.local||deleting.has(item.id)} onClick={()=>remove(item)}><Trash2Icon/></Button></div>
-</article>})}</div>:<Empty className="galleryEmpty"><EmptyHeader><EmptyMedia variant="icon"><ImagesIcon/></EmptyMedia><EmptyTitle>画廊还是空的</EmptyTitle><EmptyDescription>{error||"上传第一批参考照片，并把它们关联到具体机位。"}</EmptyDescription></EmptyHeader><EmptyContent><Button onClick={()=>setUploadOpen(true)}><FileUpIcon data-icon="inline-start"/>上传样片</Button></EmptyContent></Empty>}
+</article>})}</div>{sampleGroups.length>groupDisplayLimit&&<div className="progressiveLoad"><span>仅先加载当前批次的图片，减少重复下载与页面卡顿</span><Button variant="outline" onClick={()=>setGalleryPage({key:galleryFilterKey,limit:groupDisplayLimit+60})}>再加载 {Math.min(60,sampleGroups.length-groupDisplayLimit)} 组样片</Button></div>}</>:<Empty className="galleryEmpty"><EmptyHeader><EmptyMedia variant="icon"><ImagesIcon/></EmptyMedia><EmptyTitle>画廊还是空的</EmptyTitle><EmptyDescription>{error||"上传第一批参考照片，并把它们关联到具体机位。"}</EmptyDescription></EmptyHeader><EmptyContent><Button onClick={()=>setUploadOpen(true)}><FileUpIcon data-icon="inline-start"/>上传样片</Button></EmptyContent></Empty>}
   {uploadOpen&&<div className="modal">
 <div className="uploadDialog">
 <div className="modalHead">
@@ -630,12 +636,12 @@ function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEd
 </div>
 </div>
 </div>}
-  {active&&<div className="lightbox" onClick={()=>{setActive(null);setEditingMeta(false)}}>
+  {active&&<div className="lightbox" role="dialog" aria-modal="true" aria-label="样片详情">
 <div className="lightboxImage">
 {broken.has(active.id)?<div className="brokenLightbox"><strong>这张图片无法解码</strong><span>可在右侧保留原信息并重新上传可显示的图片。</span></div>:<img src={active.url} alt={`${active.location} ${active.stationName}`} decoding="async" fetchPriority="high" onError={()=>setBroken(items=>new Set(items).add(active.id))}/>}
-{activeSamples.length>1&&<div className="groupThumbs" onClick={event=>event.stopPropagation()}>{activeSamples.map(item=><button className={item.id===active.id?"active":""} key={item.id} onClick={()=>{setActive(item);setEditingMeta(false)}}><img src={item.url} alt={item.originalName} loading="lazy" decoding="async" fetchPriority="low"/></button>)}</div>}
+{activeSamples.length>1&&<div className="groupThumbs">{activeSamples.map(item=><button className={item.id===active.id?"active":""} key={item.id} onClick={()=>{setActive(item);setEditingMeta(false)}}><img src={item.url} alt={item.originalName} loading="lazy" decoding="async" fetchPriority="low"/></button>)}</div>}
 </div>
-<aside onClick={e=>e.stopPropagation()}>
+<aside>
 <button className="lightboxClose" onClick={()=>{setActive(null);setEditingMeta(false)}}>×</button>
 <p className="eyebrow">REFERENCE DETAIL</p>{editingMeta?<div className="sampleEdit">
 <h2>编辑样片信息</h2>
@@ -732,7 +738,7 @@ function Calendar({month,setMonth,events,onSave,onDelete,onSync}:{month:string;s
 <div>
 <p className="eyebrow">SHOOTING SCHEDULE</p>
 <h2>{y} 年 {m} 月</h2>
-<small className="calendarHint">右键点击某一天新建日程</small>
+<small className="calendarHint">点击日期右上角 ＋ 新建日程；桌面端也可右键日期</small>
 </div>
 <div className="calendarActions">
 <button onClick={onSync}> 同步 Apple 日历</button>
@@ -743,7 +749,7 @@ function Calendar({month,setMonth,events,onSave,onDelete,onSync}:{month:string;s
 </div>
 <div className="week">{["周一","周二","周三","周四","周五","周六","周日"].map(x=>
 <b key={x}>{x}</b>)}</div>
-<div className="calendarGrid">{cells.map((d,i)=>{const date=d?`${month}-${String(d).padStart(2,"0")}`:"";const items=events.filter(event=>event.eventDate===date);const moon=d?moonStatusForDate(date):null;return <div className={`day ${!d?"blank":""}`} key={i} onContextMenu={event=>{if(!d)return;event.preventDefault();create(date)}}>{d>0&&moon&&<div className="dayHeader"><span>{d}</span><span className="dayMoon" title={`${moon.label} · 月面照明约 ${moon.illumination}%`} aria-label={`${date} ${moon.label}，月面照明约 ${moon.illumination}%`}><b aria-hidden="true">{moon.symbol}</b><small>{moon.label}</small></span></div>}{items.slice(0,4).map(item=>
+<div className="calendarGrid">{cells.map((d,i)=>{const date=d?`${month}-${String(d).padStart(2,"0")}`:"";const items=events.filter(event=>event.eventDate===date);const moon=d?moonStatusForDate(date):null;return <div className={`day ${!d?"blank":""}`} key={i} onContextMenu={event=>{if(!d)return;event.preventDefault();create(date)}}>{d>0&&moon&&<div className="dayHeader"><span>{d}</span><span className="dayHeaderActions"><span className="dayMoon" title={`${moon.label} · 月面照明约 ${moon.illumination}%`} aria-label={`${date} ${moon.label}，月面照明约 ${moon.illumination}%`}><b aria-hidden="true">{moon.symbol}</b><small>{moon.label}</small></span><button type="button" className="dayAdd" aria-label={`在 ${date} 新建日程`} title="新建日程" onClick={event=>{event.stopPropagation();create(date)}}><PlusIcon aria-hidden="true"/></button></span></div>}{items.slice(0,4).map(item=>
 <button key={item.id} className="event" onClick={()=>setSelected(item)}>
 <b>{item.title}</b>
 <small>{item.startTime}–{item.endTime}{item.location?` · ${item.location}`:""}</small>
@@ -754,7 +760,7 @@ function Calendar({month,setMonth,events,onSave,onDelete,onSync}:{month:string;s
 <div className="modalActions"><button className="dangerText" onClick={async()=>{if(await onDelete(selected.id))setSelected(null)}}>删除</button><button className="primary" onClick={()=>{setDraft({...selected});setIsNew(false);setSelected(null)}}>编辑日程</button></div>
 </div></div>}{draft&&<div className="modal"><div className="eventDialog">
 <div className="modalHead"><div><small>{isNew?"NEW SCHEDULE":"EDIT SCHEDULE"}</small><h2>{isNew?"新建拍摄日程":"编辑拍摄日程"}</h2></div><button onClick={()=>setDraft(null)}>×</button></div>
-<label>日程名称<input value={draft.title} autoFocus onChange={event=>setDraft({...draft,title:event.target.value})}/></label>
+<label>日程名称<input value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})}/></label>
 <label>位置信息<input value={draft.location} placeholder="例如：千厮门大桥北侧观景台" onChange={event=>setDraft({...draft,location:event.target.value})}/></label>
 <label>拍摄日期<input type="date" value={draft.eventDate} onChange={event=>setDraft({...draft,eventDate:event.target.value})}/></label>
 <div className="eventFormGrid"><label>开始时间<input type="time" value={draft.startTime} onChange={event=>setDraft({...draft,startTime:event.target.value})}/></label><label>结束时间<input type="time" value={draft.endTime} onChange={event=>setDraft({...draft,endTime:event.target.value})}/></label></div>
@@ -770,12 +776,12 @@ function ThemeManager({records,points,tasks,onAdd,onRename,onDelete,onOpen,onEdi
 <button className="themeCardOpen" onClick={()=>setActiveId(record.id)}><span className="themeCardIcon">{icon?<img src={icon} alt=""/>:<b>{record.name.slice(0,1)}</b>}</span><span className="themeCardCopy"><strong>{record.name}</strong><em>{pointCount} 个关联点位</em></span><span className="themeCardArrow">↗</span></button>
 <div className="themeCardActions"><button aria-label={`编辑${record.name}名称`} title="编辑名称" onClick={()=>onRename(record)}>✎</button><button aria-label={`删除${record.name}主题`} title="删除主题" onClick={()=>onDelete(record)}>⌫</button></div>
 </article>})}</div></section>
-{active&&<div className="modal themeDetailModal" onClick={()=>setActiveId(null)}><div className="themeDetailDialog" onClick={event=>event.stopPropagation()}><div className="modalHead"><div><small>THEME DETAIL</small><h2>{active.name}</h2><p>{activeCounts.pointCount} 个关联点位 · {activeCounts.stationCount} 个关联机位</p></div><button onClick={()=>setActiveId(null)}>×</button></div>
+{active&&<div className="modal themeDetailModal" role="dialog" aria-modal="true" aria-label={`${active.name}主题详情`}><div className="themeDetailDialog"><div className="modalHead"><div><small>THEME DETAIL</small><h2>{active.name}</h2><p>{activeCounts.pointCount} 个关联点位 · {activeCounts.stationCount} 个关联机位</p></div><button onClick={()=>setActiveId(null)}>×</button></div>
 <div className="themeDetailHero"><span className="themeDetailIcon">{themeIcon(active.name)?<img src={themeIcon(active.name)} alt=""/>:<b>{active.name.slice(0,1)}</b>}</span><div><strong>{active.name}拍摄清单</strong><p>集中查看该主题下的点位状态、优先级、拍摄方式和全部机位。</p></div><button onClick={()=>{setActiveId(null);onOpen(active.name)}}>在点位库中查看 →</button></div>
-<div className="themeDetailList">{related.length?related.map(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);const state:Status=pointTasks.length&&pointTasks.every(task=>task.status==="已毕业")?"已毕业":pointTasks.some(task=>task.status==="待补拍")?"待补拍":"未拍摄";return <article key={point.id}><div className="themeDetailTitle"><div><span>{point.district}</span><h3>{point.location}</h3></div><span className={`status status-${state}`}>{state}</span></div><div className="themeDetailMeta"><span>点位优先级 {point.priority}</span><span>{pointTasks.length} 个拍摄任务</span><span>{point.stations.length} 个机位</span></div><div className="themeDetailStations"><small>拍摄机位</small><p>{point.stations.length?point.stations.map(station=>`${station.name}${station.description?`（${station.description}）`:""}`).join("；"):"尚未添加机位"}</p></div><p className="themeDetailNote">任务：{pointTasks.length?pointTasks.map(task=>`${task.timeWindow||"自定义"} · ${task.theme}`).join("；"):"尚未创建拍摄任务"}</p><button className="themeTaskEdit" onClick={()=>{setActiveId(null);pointTasks[0]?onEdit(pointTasks[0].id):onOpen(active.name)}}>{pointTasks[0]?"查看并编辑任务 →":"在点位库中查看 →"}</button></article>}):<div className="themeDetailEmpty"><strong>暂无关联点位</strong><p>可以先在点位详情中勾选这个创作主题。</p></div>}</div>
+<div className="themeDetailList">{related.length?related.map(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);const state:Status=pointTasks.length&&pointTasks.every(task=>task.status==="已毕业")?"已毕业":pointTasks.some(task=>task.status==="待补拍")?"待补拍":"未拍摄";return <article key={point.id}><div className="themeDetailTitle"><div><span>{point.district}</span><h3>{point.location}</h3></div><span className={`status status-${state}`}>{state}</span></div><div className="themeDetailMeta"><span>点位优先级 {point.priority}</span><span>{pointTasks.length} 个拍摄任务</span><span>{point.stations.length} 个机位</span></div><div className="themeDetailStations"><small>拍摄机位</small><p>{point.stations.length?point.stations.map(station=>`${station.name}${station.description?`（${station.description}）`:""}`).join("；"):"尚未添加机位"}</p></div><p className="themeDetailNote">任务：{pointTasks.length?pointTasks.map(task=>`${task.timeWindow||"自定义"} · ${task.theme}`).join("；"):"尚未创建拍摄任务"}</p><button className="themeTaskEdit" onClick={()=>{setActiveId(null);if(pointTasks[0])onEdit(pointTasks[0].id);else onOpen(active.name)}}>{pointTasks[0]?"查看并编辑任务 →":"在点位库中查看 →"}</button></article>}):<div className="themeDetailEmpty"><strong>暂无关联点位</strong><p>可以先在点位详情中勾选这个创作主题。</p></div>}</div>
 </div></div>}</>}
 
-function Coverage({points,tasks,categories}:{points:PointRecord[];tasks:Task[];categories:string[]}){const districts=[...new Set(points.map(point=>point.district))].map(name=>{const districtPoints=points.filter(point=>point.district===name);const done=districtPoints.filter(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);return pointTasks.length>0&&pointTasks.every(task=>task.status==="已毕业")}).length;return{name,total:districtPoints.length,done}});const categoryStats=categories.map(name=>{const themed=points.filter(point=>point.themeNames.includes(name));const done=themed.filter(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);return pointTasks.length>0&&pointTasks.every(task=>task.status==="已毕业")}).length;return{name,total:themed.length,done}}).filter(item=>item.total>0).sort((a,b)=>b.total-a.total);return <section className="coverage">
+function Coverage({points,tasks,categories}:{points:PointRecord[];tasks:Task[];categories:string[]}){const districts=[...new Set(points.map(point=>point.district))].map(name=>{const districtPoints=points.filter(point=>point.district===name);const done=districtPoints.filter(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);return pointTasks.length>0&&pointTasks.every(task=>task.status==="已毕业")}).length;return{name,total:districtPoints.length,done}});const categoryStats=categories.map(name=>{const themed=points.filter(point=>point.themeNames.some(theme=>normalizeThemeName(theme)===normalizeThemeName(name)));const done=themed.filter(point=>{const pointTasks=tasks.filter(task=>task.pointId===point.id);return pointTasks.length>0&&pointTasks.every(task=>task.status==="已毕业")}).length;return{name,total:themed.length,done}}).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,"zh-CN"));return <section className="coverage">
 <div className="coverageIntro">
 <p className="eyebrow">COVERAGE REPORT</p>
 <h2>区域与主题归类覆盖率</h2>
@@ -796,7 +802,7 @@ function Coverage({points,tasks,categories}:{points:PointRecord[];tasks:Task[];c
 <b>{t.location}</b>{t.themeCategory||"未归类"} · {t.theme} · {t.status}</span>)}</div>
 </article>
 </section>}
-function Bar({name,total,done}:{name:string;total:number;done:number}){const p=Math.round(done/(total||1)*100);return <div className="barRow">
+function Bar({name,total,done}:{name:string;total:number;done:number}){const p=Math.round(done/(total||1)*100);return <div className={`barRow ${total===0?"barRow-empty":""}`}>
 <div>
 <span>{name}</span>
 <b>{p}%</b>
@@ -804,7 +810,7 @@ function Bar({name,total,done}:{name:string;total:number;done:number}){const p=M
 <div className="bar">
 <i style={{width:`${p}%`}}/>
 </div>
-<small>{done} / {total}</small>
+<small>{total===0?"暂无关联":`${done} / ${total}`}</small>
 </div>}
 
 function Editor({task,update,close,addStation,addSamples}:{task:Task;update:(p:Partial<Task>)=>void;close:()=>void;addStation:()=>void;addSamples:(f:FileList|null)=>void}){return <div className="modal editorModal">

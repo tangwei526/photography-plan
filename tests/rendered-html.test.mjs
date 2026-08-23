@@ -69,3 +69,28 @@ test("map weather includes layered cloud forecasts and calendar includes moon st
   assert.match(css, /\.cloudLayer/);
   assert.match(css, /\.dayMoon/);
 });
+
+test("large point and gallery collections render progressively", async () => {
+  const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  assert.match(source, /pointDisplayLimit/);
+  assert.match(source, /filtered\.slice\(0,pointDisplayLimit\)/);
+  assert.match(source, /groupDisplayLimit/);
+  assert.match(source, /sampleGroups\.slice\(0,groupDisplayLimit\)/);
+  assert.match(source, /为保证浏览流畅/);
+});
+
+test("mobile navigation, calendar creation and route selection remain reachable", async () => {
+  const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(source, /className="dayAdd"/);
+  assert.match(source, /routeCandidates\.map/);
+  assert.match(source, /mappedTasks\.find\(t=>t\.id===id\)/);
+  assert.match(css, /@media\(max-width:720px\)\{[\s\S]*?\.topbar nav\{display:flex/);
+});
+
+test("astronomy time hydrates after mount and coverage keeps empty themes visible", async () => {
+  const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  assert.match(source, /suppressHydrationWarning/);
+  assert.match(source, /total===0\?"暂无关联"/);
+  assert.doesNotMatch(source, /categoryStats=[\s\S]*?\.filter\(item=>item\.total>0\)/);
+});
