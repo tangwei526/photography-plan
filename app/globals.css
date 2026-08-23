@@ -178,3 +178,262 @@ button:active:not(:disabled),a.soft:active{transform:scale(.97);transition-durat
     box-shadow:none;
   }
 }
+
+/* Soft UI / neumorphism — shared light and dark material system */
+:root{
+  --paper:#f5f5f6;
+  --surface:#f5f5f6;
+  --surface-soft:#f0f0f2;
+  --surface-muted:#e9e9ec;
+  --field:#f5f5f6;
+  --line:#dedee2;
+  --background:#f5f5f6;
+  --card:#f5f5f6;
+  --popover:#f5f5f6;
+  --secondary:#ececef;
+  --muted:#ececef;
+  --border:#dedee2;
+  --input:#dedee2;
+  --sidebar:#f2f2f4;
+  --sidebar-accent:#e9e9ec;
+  --soft-highlight:#ffffff;
+  --soft-shadow:#d1d1d5;
+  --soft-shadow-strong:#c7c7cc;
+  --soft-raised:-9px -9px 20px var(--soft-highlight),9px 9px 20px var(--soft-shadow);
+  --soft-raised-small:-5px -5px 12px var(--soft-highlight),5px 5px 12px var(--soft-shadow);
+  --soft-floating:-14px -14px 30px var(--soft-highlight),14px 14px 32px var(--soft-shadow-strong);
+  --soft-inset:inset -4px -4px 9px var(--soft-highlight),inset 4px 4px 9px var(--soft-shadow);
+  --soft-inset-small:inset -2px -2px 5px var(--soft-highlight),inset 2px 2px 5px var(--soft-shadow);
+  --soft-edge:color-mix(in srgb,var(--soft-highlight) 74%,var(--line));
+}
+
+[data-theme="dark"]{
+  --ink:#edf1ee;
+  --paper:#1d211f;
+  --surface:#1d211f;
+  --surface-soft:#202522;
+  --surface-muted:#292f2b;
+  --field:#1d211f;
+  --line:#303632;
+  --background:#1d211f;
+  --foreground:#edf1ee;
+  --card:#1d211f;
+  --card-foreground:#edf1ee;
+  --popover:#202522;
+  --popover-foreground:#edf1ee;
+  --secondary:#292f2b;
+  --secondary-foreground:#edf1ee;
+  --muted:#292f2b;
+  --muted-foreground:#a8b0ab;
+  --border:#303632;
+  --input:#303632;
+  --sidebar:#202522;
+  --sidebar-accent:#292f2b;
+  --soft-highlight:#2b312e;
+  --soft-shadow:#101311;
+  --soft-shadow-strong:#0b0d0c;
+  --soft-raised:-8px -8px 18px var(--soft-highlight),8px 8px 18px var(--soft-shadow);
+  --soft-raised-small:-4px -4px 10px var(--soft-highlight),4px 4px 10px var(--soft-shadow);
+  --soft-floating:-13px -13px 28px #2a302d,13px 13px 30px var(--soft-shadow-strong);
+  --soft-inset:inset -4px -4px 9px var(--soft-highlight),inset 4px 4px 9px var(--soft-shadow);
+  --soft-inset-small:inset -2px -2px 5px var(--soft-highlight),inset 2px 2px 5px var(--soft-shadow);
+  --soft-edge:color-mix(in srgb,var(--soft-highlight) 66%,var(--line));
+}
+
+body{
+  background:var(--paper);
+  background-image:radial-gradient(circle at 50% -12%,color-mix(in srgb,var(--soft-highlight) 32%,transparent),transparent 38%);
+}
+.loginPage{
+  background:var(--paper);
+  background-image:radial-gradient(circle at 18% 12%,color-mix(in srgb,var(--soft-highlight) 48%,transparent),transparent 44%);
+}
+.loginCard{
+  border:1px solid var(--soft-edge);
+  border-radius:24px;
+  background:var(--surface);
+  box-shadow:var(--soft-floating);
+}
+.loginMark{
+  border:1px solid var(--soft-edge);
+  background:var(--surface);
+  box-shadow:var(--soft-raised-small);
+  font-family:inherit;
+  font-weight:750;
+}
+.loginCard input{
+  border:1px solid var(--soft-edge);
+  border-radius:12px;
+  background:var(--field);
+  color:var(--ink);
+  box-shadow:var(--soft-inset-small);
+}
+
+.topbar{
+  background:color-mix(in srgb,var(--surface) 86%,transparent);
+  border-bottom:1px solid color-mix(in srgb,var(--soft-edge) 70%,transparent);
+  box-shadow:0 8px 22px color-mix(in srgb,var(--soft-shadow) 48%,transparent),inset 0 1px var(--soft-highlight);
+}
+[data-theme="dark"] .topbar{
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  box-shadow:0 8px 22px #0b0d0c88,inset 0 1px #ffffff0b;
+}
+
+.topbar nav{
+  border:0;
+  background:var(--surface);
+  box-shadow:var(--soft-inset-small);
+}
+.topbar nav .navActive{
+  background:var(--surface);
+  box-shadow:var(--soft-raised-small);
+}
+.brandMark{
+  box-shadow:inset 2px 2px 5px #ffffff55,inset -3px -3px 6px #a7381650,5px 5px 12px color-mix(in srgb,var(--soft-shadow) 75%,transparent),-4px -4px 10px var(--soft-highlight);
+}
+
+[data-slot="button"],.soft,.dark,.primary,.calendarHead button,.currentWeatherActions button,.weatherSearch>button,.pointOverview button,.pointEditActions button,.themePickerActions button{
+  border:1px solid var(--soft-edge);
+  background:var(--surface);
+  color:var(--ink);
+  box-shadow:var(--soft-raised-small);
+  transition:transform .1s ease-out,box-shadow .16s ease-out,color .16s ease-out,background-color .16s ease-out;
+}
+[data-slot="button"][data-variant="default"],.primary{
+  border-color:color-mix(in srgb,var(--accent) 78%,var(--soft-edge));
+  background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 88%,white),var(--accent));
+  color:var(--primary-foreground);
+  box-shadow:-5px -5px 12px var(--soft-highlight),5px 5px 12px var(--soft-shadow),inset 1px 1px #ffffff45;
+}
+[data-slot="button"][data-variant="ghost"],[data-slot="button"][data-variant="link"]{
+  border-color:transparent;
+  background:transparent;
+  box-shadow:none;
+}
+[data-slot="button"][data-variant="destructive"]{
+  border-color:color-mix(in srgb,var(--destructive) 24%,var(--soft-edge));
+  background:color-mix(in srgb,var(--destructive) 10%,var(--surface));
+  color:var(--destructive);
+  box-shadow:var(--soft-raised-small);
+}
+[data-slot="button"]:active:not(:disabled),.soft:active,.dark:active,.primary:active,.calendarHead button:active{
+  transform:scale(.98);
+  box-shadow:var(--soft-inset-small);
+}
+[data-slot="button"][data-variant="default"]:active:not(:disabled),.primary:active{
+  box-shadow:inset 3px 3px 7px color-mix(in srgb,var(--accent) 72%,black),inset -2px -2px 6px color-mix(in srgb,var(--accent) 75%,white);
+}
+
+[data-slot="input"],[data-slot="select-trigger"],input,select,textarea,.search,.weatherSearch input{
+  border:1px solid var(--soft-edge);
+  background:var(--field);
+  color:var(--ink);
+  box-shadow:var(--soft-inset-small);
+}
+[data-slot="input"]:focus-visible,[data-slot="select-trigger"]:focus-visible,input:focus,select:focus,textarea:focus,.search:focus-within{
+  border-color:color-mix(in srgb,var(--accent) 58%,var(--soft-edge));
+  box-shadow:var(--soft-inset-small),0 0 0 3px color-mix(in srgb,var(--accent) 13%,transparent);
+}
+[data-slot="select-content"],[data-slot="dialog-content"],[data-slot="alert-dialog-content"],[data-slot="toast"]{
+  border:1px solid var(--soft-edge);
+  background:var(--popover);
+  box-shadow:var(--soft-floating);
+}
+
+.astronomyHero,.currentWeather,.stats article,.workspace,.calendarPanel,.coverage,.galleryPanel,.themeManager,.mapWorkspace{
+  border:1px solid var(--soft-edge);
+  background:var(--surface);
+  box-shadow:var(--soft-raised);
+}
+.workspace aside,.districtSidebar{
+  background:var(--surface);
+  box-shadow:inset -5px 0 12px color-mix(in srgb,var(--soft-shadow) 55%,transparent),inset 1px 0 var(--soft-highlight);
+}
+.district{
+  background:transparent;
+  box-shadow:none;
+}
+.district:hover{
+  background:var(--surface);
+  box-shadow:var(--soft-raised-small);
+}
+.district.active,[data-theme="dark"] .district.active{
+  background:var(--surface);
+  color:var(--accent);
+  box-shadow:var(--soft-inset-small);
+}
+.district b,.locationName span,.status-未拍摄,.galleryTag,.tags span,.themeDetailMeta span,.pointThemeMeta span{
+  border:1px solid color-mix(in srgb,var(--soft-edge) 72%,transparent);
+  background:var(--surface);
+  box-shadow:var(--soft-inset-small);
+}
+
+.locationCard,.themeCard,.sampleCard,.coverageGrid>article,.gapList,.weatherDays article,.uploadQueueItem,.pointThemeList>article{
+  border:1px solid var(--soft-edge);
+  background:var(--surface);
+  box-shadow:var(--soft-raised-small);
+}
+.locationSummary,.themeCardOpen,.sampleCard>span{
+  background:transparent;
+}
+@media(hover:hover){
+  .locationCard:hover,.themeCard:hover,.sampleCard:hover{
+    transform:translateY(-2px);
+    border-color:color-mix(in srgb,var(--accent) 24%,var(--soft-edge));
+    box-shadow:var(--soft-floating);
+  }
+}
+.locationSummary:active,.themeCardOpen:active,.sampleCard:active{
+  transform:scale(.99);
+  box-shadow:var(--soft-inset-small);
+}
+.statIcon,.sampleCardActions button,.pointCardActions button,.sampleCount{
+  box-shadow:var(--soft-raised-small);
+}
+
+.calendarGrid,.week,.routePicker,.pointThemeSelector,.pointTaskSelector,.pointStationSelector,.pointOverview,.pointEditGrid,.themeDetailHero,.fileDrop,.uploadRecovery{
+  border:1px solid var(--soft-edge);
+  background:var(--surface);
+  box-shadow:var(--soft-inset);
+}
+.day,.day.blank,[data-theme="dark"] .day,[data-theme="dark"] .day.blank{
+  background:transparent;
+  border-color:color-mix(in srgb,var(--line) 72%,transparent);
+}
+.event,.themeCheckboxGrid [data-slot="field"],.taskCheckboxGrid [data-slot="field"]{
+  border:1px solid var(--soft-edge);
+  background:var(--surface);
+  box-shadow:var(--soft-raised-small);
+}
+.event:active,.themeCheckboxGrid [data-slot="field"]:has([data-checked]),.taskCheckboxGrid [data-slot="field"]:has([data-checked]){
+  box-shadow:var(--soft-inset-small);
+}
+.bar,.taskProgress>div,.ring:after{
+  box-shadow:var(--soft-inset-small);
+}
+
+.modal{
+  background:color-mix(in srgb,#0e1210 62%,transparent);
+  backdrop-filter:blur(14px) saturate(115%);
+}
+.modal form,.pointDialog,.themeDetailDialog,.eventDialog,.uploadDialog,.mergeDialog,.lightbox aside{
+  border:1px solid var(--soft-edge);
+  background:var(--surface);
+  box-shadow:var(--soft-floating);
+}
+.lightbox{
+  background:color-mix(in srgb,#0d100f 88%,transparent);
+}
+.toast,[data-slot="toast"]{
+  background:color-mix(in srgb,var(--surface) 90%,transparent);
+  color:var(--ink);
+  box-shadow:var(--soft-floating);
+}
+
+@media(prefers-reduced-transparency:reduce){
+  .topbar,.modal,.toast,[data-slot="toast"]{backdrop-filter:none;-webkit-backdrop-filter:none}
+  .topbar,.toast,[data-slot="toast"]{background:var(--surface)}
+}
+@media(prefers-contrast:more){
+  .locationCard,.themeCard,.sampleCard,.stats article,.workspace,.calendarPanel,.coverage,.galleryPanel,.themeManager,.mapWorkspace,[data-slot="button"],[data-slot="input"]{border-color:var(--ink)}
+}

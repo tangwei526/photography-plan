@@ -28,3 +28,11 @@ test("uses an in-app admin dialog before editing gallery samples", async () => {
   assert.match(source, /ensureAdmin=\{ensureAdmin\}/);
   assert.doesNotMatch(source, /prompt\("请输入管理密钥/);
 });
+
+test("ships Soft UI tokens for light and dark themes", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.match(css, /--soft-raised:/);
+  assert.match(css, /--soft-inset:/);
+  assert.match(css, /\[data-theme="dark"\]\{[\s\S]*?--soft-highlight:#2b312e/);
+  assert.match(css, /box-shadow:var\(--soft-raised\)/);
+});
