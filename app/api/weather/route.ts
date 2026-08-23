@@ -21,7 +21,7 @@ const clock = (value?: string) => /T(\d{2}:\d{2})/.exec(String(value || ""))?.[1
 const percent = (value: unknown) => Math.round(Math.max(0, Math.min(1, Number(value) || 0)) * 100);
 const metric = (value: unknown) => { const match = /-?\d+(?:\.\d+)?/.exec(String(value || "")); return match ? Number(match[0]) : null; };
 const parenthetical = (value: unknown) => /[（(]([^）)]+)[）)]/.exec(String(value || ""))?.[1] || "";
-const chinaDate = (offset = 0) => { const date = new Date(Date.now() + offset * 86400000); return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(date); };
+const localDate = (timeZone = "UTC", offset = 0) => { const date = new Date(Date.now() + offset * 86400000); try { return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date); } catch { return new Intl.DateTimeFormat("en-CA", { timeZone: "UTC", year: "numeric", month: "2-digit", day: "2-digit" }).format(date); } };
 const aodLabel = (value: number | null) => value === null ? "暂缺" : value < .1 ? "高级水晶" : value < .2 ? "水晶" : value < .3 ? "较通透" : value < .4 ? "一般" : value < .6 ? "偏浑浊" : value < .8 ? "浑浊" : "\u91cd\u973e";
 const qualityLabel = (value: number | null) => value === null ? "暂缺" : value < .001 ? "不烧" : value < .05 ? "微微烧" : value < .2 ? "小烧" : value < .4 ? "小到中烧" : value < .6 ? "中等烧" : value < .8 ? "中到大烧" : value < 1 ? "大烧" : value < 1.5 ? "典型大烧" : value < 2 ? "优质大烧" : "世纪大烧";
 
@@ -45,14 +45,14 @@ async function sunsetbot(city: string, event: "rise_1" | "set_1" | "rise_2" | "s
 }
 
 async function openMeteoAir(latitude: number, longitude: number) {
-  const params = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude), hourly: "aerosol_optical_depth,us_aqi,pm2_5", timezone: "Asia/Shanghai", forecast_days: "2" });
+  const params = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude), hourly: "aerosol_optical_depth,us_aqi,pm2_5", timezone: "auto", forecast_days: "2" });
   const response = await timedFetch(`https://air-quality-api.open-meteo.com/v1/air-quality?${params}`, { headers: { accept: "application/json" } }, 8000);
   if (!response.ok) throw new Error(`Open-Meteo ${response.status}`);
   return response.json() as Promise<{ hourly?: { time?: string[]; aerosol_optical_depth?: Array<number | null>; us_aqi?: Array<number | null>; pm2_5?: Array<number | null> } }>;
 }
 
 async function openMeteoWeather(latitude: number, longitude: number) {
-  const params = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude), hourly: "cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,precipitation_probability", timezone: "Asia/Shanghai", forecast_days: "2" });
+  const params = new URLSearchParams({ latitude: String(latitude), longitude: String(longitude), hourly: "cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,precipitation_probability", timezone: "auto", forecast_days: "2" });
   const response = await timedFetch(`https://api.open-meteo.com/v1/forecast?${params}`, { headers: { accept: "application/json" } }, 8000);
   if (!response.ok) throw new Error(`Open-Meteo Weather ${response.status}`);
   return response.json() as Promise<{ hourly?: { time?: string[]; cloud_cover?: Array<number | null>; cloud_cover_low?: Array<number | null>; cloud_cover_mid?: Array<number | null>; cloud_cover_high?: Array<number | null>; relative_humidity_2m?: Array<number | null>; precipitation_probability?: Array<number | null> } }>;
@@ -60,7 +60,7 @@ async function openMeteoWeather(latitude: number, longitude: number) {
 
 async function openMeteoHourlyForecast(latitude: number, longitude: number) {
   const params = new URLSearchParams({
-    latitude: String(latitude), longitude: String(longitude), timezone: "Asia/Shanghai", forecast_hours: "48", wind_speed_unit: "kmh",
+    latitude: String(latitude), longitude: String(longitude), timezone: "auto", forecast_hours: "48", wind_speed_unit: "kmh",
     hourly: "temperature_2m,apparent_temperature,weather_code,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,precipitation_probability,precipitation,visibility,wind_speed_10m,wind_gusts_10m",
   });
   const response = await timedFetch(`https://api.open-meteo.com/v1/forecast?${params}`, { headers: { accept: "application/json" } }, 8000);
@@ -71,6 +71,17 @@ async function openMeteoHourlyForecast(latitude: number, longitude: number) {
     relative_humidity_2m?: Array<number | null>; precipitation_probability?: Array<number | null>; precipitation?: Array<number | null>;
     visibility?: Array<number | null>; wind_speed_10m?: Array<number | null>; wind_gusts_10m?: Array<number | null>;
   } }>;
+}
+
+async function openMeteoLocationSearch(keyword: string) {
+  const params = new URLSearchParams({ name: keyword, count: "8", language: "zh", format: "json" });
+  const response = await timedFetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`, { headers: { accept: "application/json" } }, 8000);
+  if (!response.ok) throw new Error(`Open-Meteo Geocoding ${response.status}`);
+  const data = await response.json() as { results?: Array<Record<string, unknown>> };
+  return (data.results || []).map(item => ({
+    id: String(item.id || ""), name: String(item.name || ""), adm2: String(item.admin2 || item.admin3 || ""), adm1: String(item.admin1 || ""),
+    country: String(item.country || ""), countryCode: String(item.country_code || ""), timezone: String(item.timezone || "UTC"), latitude: Number(item.latitude), longitude: Number(item.longitude),
+  })).filter(item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
 }
 
 const hourlyForecast = (data: Awaited<ReturnType<typeof openMeteoHourlyForecast>> | null) => {
@@ -142,11 +153,12 @@ export async function GET(request: Request) {
     if (query.get("mode") === "search") {
       const keyword = String(query.get("query") || "").trim().slice(0, 80);
       if (!keyword) return Response.json({ error: "请输入地点名称" }, { status: 400 });
-      const data = await qweather(`/geo/v2/city/lookup?location=${encodeURIComponent(keyword)}&range=cn&number=8&lang=zh`);
-      const locations = (Array.isArray(data.location) ? data.location : []).map((item: Record<string, unknown>) => ({
-        id: String(item.id || ""), name: String(item.name || ""), adm2: String(item.adm2 || ""), adm1: String(item.adm1 || ""),
-        country: String(item.country || ""), latitude: Number(item.lat), longitude: Number(item.lon),
-      })).filter((item: { latitude: number; longitude: number }) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+      const data = await qweather(`/geo/v2/city/lookup?location=${encodeURIComponent(keyword)}&number=8&lang=zh`).catch(() => null);
+      let locations = (Array.isArray(data?.location) ? data.location : []).map((item: Record<string, unknown>) => ({
+          id: String(item.id || ""), name: String(item.name || ""), adm2: String(item.adm2 || ""), adm1: String(item.adm1 || ""),
+          country: String(item.country || ""), countryCode: String(item.countryCode || ""), timezone: String(item.tz || "UTC"), latitude: Number(item.lat), longitude: Number(item.lon),
+        })).filter((item: { latitude: number; longitude: number }) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+      if (!locations.length && !/^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/.test(keyword)) locations = await openMeteoLocationSearch(keyword);
       return Response.json({ locations }, { headers: { "cache-control": "public, max-age=3600", "access-control-allow-origin": "*" } });
     }
 
@@ -155,7 +167,7 @@ export async function GET(request: Request) {
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return Response.json({ error: "无效天气坐标" }, { status: 400 });
     const lat = latitude.toFixed(2); const lon = longitude.toFixed(2);
     if (query.get("mode") === "photo-conditions") {
-      const rawCity = String(query.get("city") || "重庆").trim().slice(0, 24); const city = rawCity.replace(/[市区县]$/, "") || "重庆";
+      const rawCity = String(query.get("city") || "重庆").trim().slice(0, 48); const city = rawCity.replace(/[市区县]$/, "") || "重庆"; const timezone = String(query.get("timezone") || "UTC").trim().slice(0, 80);
       const eventKeys = ["rise_1", "set_1", "rise_2", "set_2"] as const;
       const [sunsetEvents, airDaily, weatherModel, airModel] = await Promise.all([
         Promise.all(eventKeys.map(event => sunsetbot(city, event).catch(() => null))),
@@ -170,11 +182,11 @@ export async function GET(request: Request) {
           event, date, time: "", quality: estimate, qualityLabel: estimate === null ? "暂缺" : qualityLabel(estimate), aod: aod === null ? null : Number(aod.toFixed(3)), aodLabel: aodLabel(aod), model: "CAMS", run: "", source: "参考估算", estimated: true,
         };
       };
-      const days = [chinaDate(0), chinaDate(1)].map((date, index) => {
+      const days = [localDate(timezone,0), localDate(timezone,1)].map((date, index) => {
         const fallbackAqi = closestHourly(airModel, date, 12, "us_aqi"); const aqi = qweatherAqi(airDaily, date) || (fallbackAqi === null ? null : { value: Math.round(fallbackAqi), category: fallbackAqi <= 50 ? "优" : fallbackAqi <= 100 ? "良" : fallbackAqi <= 150 ? "轻度污染" : "污染", standard: "US AQI", source: "Open-Meteo / CAMS" });
         return { date, label: index ? "明日" : "今日", aqi, pm25: closestHourly(airModel, date, 12, "pm2_5"), sunrise: buildEvent(date, index ? "rise_2" : "rise_1", 6), sunset: buildEvent(date, index ? "set_2" : "set_1", 19) };
       });
-      return Response.json({ city: rawCity, latitude, longitude, days, updatedAt: new Date().toISOString(), sunsetbotAvailable: sunsetEvents.some(Boolean), attributions: ["SunsetBot", "和风天气", "Open-Meteo / CAMS"] }, { headers: { "cache-control": "public, max-age=900, stale-while-revalidate=1800", "access-control-allow-origin": "*" } });
+      return Response.json({ city: rawCity, timezone, latitude, longitude, days, updatedAt: new Date().toISOString(), sunsetbotAvailable: sunsetEvents.some(Boolean), attributions: ["SunsetBot", "和风天气", "Open-Meteo / CAMS"] }, { headers: { "cache-control": "public, max-age=900, stale-while-revalidate=1800", "access-control-allow-origin": "*" } });
     }
     const [currentData, dailyData, hourlyData] = await Promise.all([
       qweather(`/weather/v1/current/${lat}/${lon}?localTime=true&lang=zh`),

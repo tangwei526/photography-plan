@@ -30,11 +30,11 @@ export default function LoginPage() {
   return <main className="loginPage">
     <section className="loginCard">
       <div className="loginMark">焦</div>
-      <p className="eyebrow">CHONGQING PHOTO ATLAS</p>
-      <h1>进入山城取景簿</h1>
+      <p className="eyebrow">GLOBAL PHOTO LOCATION ATLAS</p>
+      <h1>进入取景簿</h1>
       <p className="loginIntro">拍摄点位、计划与样片仅向授权成员开放。</p>
       <form onSubmit={submit}>
-        <label>账号<input autoFocus autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} placeholder="请输入账号" /></label>
+        <label>账号<input autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} placeholder="请输入账号" /></label>
         <label>密码<input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="请输入密码" /></label>
         {error && <p className="loginError" role="alert">{error}</p>}
         <button className="primary full" disabled={submitting || !username || !password}>{submitting ? "正在验证…" : "验证并进入"}</button>

@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 
 type SampleMeta = {
-  taskId: string; district: string; location: string; theme: string; themeCategory: string;
+  taskId: string; countryCode: string; countryName: string; admin1: string; city: string; district: string; timezone: string; location: string; theme: string; themeCategory: string;
   device: string; shootTime: string;
   stationId: string; stationName: string; stationDescription: string;
   subjectDescription: string; note: string; originalName: string; groupId?: string;
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       if (!Number.isFinite(size) || size <= 0 || size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400, headers: cors(request) });
       const id = `${crypto.randomUUID()}.${extensionFor(type)}`;
       const meta: SampleMeta = {
-        taskId: cleanText(body.taskId, 40), district: cleanText(body.district, 60), location: cleanText(body.location, 160),
+        taskId: cleanText(body.taskId, 40), countryCode: cleanText(body.countryCode, 8).toUpperCase(), countryName: cleanText(body.countryName, 60), admin1: cleanText(body.admin1, 80), city: cleanText(body.city, 80), district: cleanText(body.district, 80), timezone: cleanText(body.timezone, 80), location: cleanText(body.location, 160),
         theme: cleanText(body.theme, 100), themeCategory: cleanText(body.themeCategory, 40), device: cleanText(body.device, 40), shootTime: cleanText(body.shootTime, 40), stationId: cleanText(body.stationId, 80), stationName: cleanText(body.stationName, 160),
         stationDescription: cleanText(body.stationDescription, 500), subjectDescription: "", note: cleanText(body.note, 500), originalName: cleanText(body.originalName, 200),
       };
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
     if (file.size <= 0 || file.size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400, headers: jsonHeaders(request) });
     const id = `${crypto.randomUUID()}.${extensionFor(file.type)}`;
     const meta: SampleMeta = {
-      taskId: clean(form.get("taskId"), 40), district: clean(form.get("district"), 60), location: clean(form.get("location"), 160),
+      taskId: clean(form.get("taskId"), 40), countryCode: clean(form.get("countryCode"), 8).toUpperCase(), countryName: clean(form.get("countryName"), 60), admin1: clean(form.get("admin1"), 80), city: clean(form.get("city"), 80), district: clean(form.get("district"), 80), timezone: clean(form.get("timezone"), 80), location: clean(form.get("location"), 160),
       theme: clean(form.get("theme"), 100), themeCategory: clean(form.get("themeCategory"), 40), device: clean(form.get("device"), 40), shootTime: clean(form.get("shootTime"), 40), stationId: clean(form.get("stationId"), 80), stationName: clean(form.get("stationName"), 160),
       stationDescription: clean(form.get("stationDescription"), 500), subjectDescription: "", note: clean(form.get("note"), 500), originalName: clean(form.get("originalName"), 200) || file.name.slice(0, 200),
     };
@@ -148,7 +148,7 @@ export async function PUT(request: Request) {
     const existing = await bucket().get(`samples/${id}`);
     if (!existing) return Response.json({ error: "样片不存在" }, { status: 404, headers: cors(request) });
     const metadata: Record<string,string> = { ...(existing.customMetadata || {}) };
-    const fields: [string,number][] = [["originalName",200],["location",160],["themeCategory",40],["device",40],["shootTime",40],["stationId",80],["stationName",160],["stationDescription",500],["subjectDescription",500],["note",500],["groupId",80]];
+    const fields: [string,number][] = [["originalName",200],["countryCode",8],["countryName",60],["admin1",80],["city",80],["district",80],["timezone",80],["location",160],["themeCategory",40],["device",40],["shootTime",40],["stationId",80],["stationName",160],["stationDescription",500],["subjectDescription",500],["note",500],["groupId",80]];
     for (const [field,max] of fields) if (form?.has(field)) metadata[field] = clean(form.get(field), max).trim();
     const replacementId = `${crypto.randomUUID()}.${extensionFor(file.type)}`;
     await bucket().put(`samples/${replacementId}`, file.stream(), { httpMetadata: { contentType: file.type }, customMetadata: metadata });
@@ -181,7 +181,7 @@ export async function PATCH(request: Request) {
   if (!object) return Response.json({ error: "样片不存在" }, { status: 404, headers: cors(request) });
 
   const metadata: Record<string,string> = { ...(object.customMetadata || {}) };
-  const fields: [string,number][] = [["originalName",200],["location",160],["themeCategory",40],["device",40],["shootTime",40],["stationId",80],["stationName",160],["stationDescription",500],["subjectDescription",500],["note",500],["groupId",80]];
+  const fields: [string,number][] = [["originalName",200],["countryCode",8],["countryName",60],["admin1",80],["city",80],["district",80],["timezone",80],["location",160],["themeCategory",40],["device",40],["shootTime",40],["stationId",80],["stationName",160],["stationDescription",500],["subjectDescription",500],["note",500],["groupId",80]];
   for (const [field,max] of fields) if (body[field] !== undefined) metadata[field] = cleanText(body[field], max);
   await bucket().put(`samples/${id}`, await object.arrayBuffer(), {
     httpMetadata: object.httpMetadata,

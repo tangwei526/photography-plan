@@ -31,9 +31,9 @@ export async function POST(request: Request) {
       const items: Array<Record<string, unknown>> = [];
       for (let index = 0; index < source.length; index++) {
         const item = source[index] as Record<string, unknown>;
-        const key = text(item.key, 260); const district = text(item.district, 60); const location = text(item.location, 160);
+        const key = text(item.key, 260); const country = text(item.countryName, 60); const admin1 = text(item.admin1, 60); const city = text(item.city, 60); const district = text(item.district, 60); const location = text(item.location, 160);
         if (!key || !location) { items.push({ key }); continue; }
-        const data = await amap("/v3/geocode/geo", { address: `重庆市${district}${location}`, city: "重庆", output: "JSON" });
+        const data = await amap("/v3/geocode/geo", { address: `${country}${admin1}${city}${district}${location}`, city: city || admin1, output: "JSON" });
         const point = data.geocodes?.[0]; const [longitude, latitude] = String(point?.location || "").split(",").map(Number);
         items.push(Number.isFinite(longitude) && Number.isFinite(latitude) ? { key, longitude, latitude, formattedAddress: point.formatted_address || "" } : { key });
         if (index < source.length - 1) await wait(1100);
@@ -53,13 +53,13 @@ export async function POST(request: Request) {
       if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return Response.json({ error: "无效地图坐标" }, { status: 400 });
       const data = await amap("/v3/geocode/regeo", { location: `${longitude.toFixed(6)},${latitude.toFixed(6)}`, radius: "1000", extensions: "base", output: "JSON" });
       const component = data.regeocode?.addressComponent || {};
-      return Response.json({ district: text(component.district, 60), city: text(component.city || component.province, 60), formattedAddress: text(data.regeocode?.formatted_address, 200) });
+      return Response.json({ countryCode: text(component.country === "中国" ? "CN" : "", 8), countryName: text(component.country, 60), admin1: text(component.province, 60), district: text(component.district, 60), city: text(component.city || component.province, 60), timezone: component.country === "中国" ? "Asia/Shanghai" : "UTC", formattedAddress: text(data.regeocode?.formatted_address, 200), coordinateSystem: "gcj02" });
     }
     if (action === "search") {
-      const query = text(body.query, 120); const district = text(body.district, 60);
+      const query = text(body.query, 120); const district = text(body.district, 60); const city = text(body.city, 60); const admin1 = text(body.admin1, 60);
       if (!query) return Response.json({ error: "请输入要搜索的地点" }, { status: 400 });
-      const data = await amap("/v5/place/text", { keywords: query, region: district ? `重庆市${district}` : "重庆市", city_limit: "false", page_size: "8", output: "JSON" });
-      const items = (Array.isArray(data.pois) ? data.pois : []).map((poi: Record<string, unknown>) => { const [longitude, latitude] = text(poi.location, 80).split(",").map(Number); return { name: text(poi.name, 120), address: text(poi.address, 180), district: text(poi.adname || district, 60), longitude, latitude }; }).filter((item: { longitude:number; latitude:number }) => Number.isFinite(item.longitude) && Number.isFinite(item.latitude));
+      const data = await amap("/v5/place/text", { keywords: query, region: city || admin1 || district, city_limit: "false", page_size: "8", output: "JSON" });
+      const items = (Array.isArray(data.pois) ? data.pois : []).map((poi: Record<string, unknown>) => { const [longitude, latitude] = text(poi.location, 80).split(",").map(Number); return { name: text(poi.name, 120), address: text(poi.address, 180), countryCode: "CN", countryName: "中国", admin1: text(poi.pname || admin1, 60), city: text(poi.cityname || city || admin1, 60), district: text(poi.adname || district, 60), timezone: "Asia/Shanghai", coordinateSystem: "gcj02", longitude, latitude }; }).filter((item: { longitude:number; latitude:number }) => Number.isFinite(item.longitude) && Number.isFinite(item.latitude));
       return Response.json({ items });
     }
     if (action === "route") {

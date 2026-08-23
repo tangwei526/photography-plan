@@ -26,6 +26,6 @@ export async function GET(request: Request) {
     `LOCATION:${escapeIcs(event.location)}`,
     "END:VEVENT",
   ].join("\r\n")).join("\r\n");
-  const calendar = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Shancheng Photo Atlas//CN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:山城取景簿",events,"END:VCALENDAR"].filter(Boolean).join("\r\n");
+  const calendar = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Photo Location Atlas//CN","CALSCALE:GREGORIAN","METHOD:PUBLISH","X-WR-CALNAME:取景簿",events,"END:VCALENDAR"].filter(Boolean).join("\r\n");
   return new Response(calendar, { headers:{ "content-type":"text/calendar; charset=utf-8", "cache-control":"no-cache" } });
 }

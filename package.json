@@ -13,7 +13,8 @@
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "qweather:jwt": "node scripts/generate-qweather-jwt.mjs"
+    "qweather:jwt": "node scripts/generate-qweather-jwt.mjs",
+    "template:excel": "node scripts/generate-import-template.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
