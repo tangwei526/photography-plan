@@ -329,7 +329,7 @@ export default function Home(){
 </div>
 {view==="library"?<div className="libraryIntroActions"><CurrentWeatherCard/><Button size="lg" onClick={createPoint}><PlusIcon data-icon="inline-start"/>新建点位</Button></div>:view!=="calendar"&&view!=="themes"&&<Button size="lg" onClick={createPoint}><PlusIcon data-icon="inline-start"/>新建点位</Button>}
 </section>
-{view!=="library"&&<OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={points.filter(point=>point.longitude&&point.latitude).length}/>}</>}
+{view==="coverage"&&<OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={points.filter(point=>point.longitude&&point.latitude).length}/>}</>}
 
   {view==="library"&&<section className="workspace">
 <aside className="districtSidebar" aria-label="行政区域筛选">
