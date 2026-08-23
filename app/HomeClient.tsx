@@ -11,11 +11,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import { toast as shadcnToast } from "@/components/ui/toast";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CameraIcon, DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, LocateFixedIcon, LogOutIcon, MapPinIcon, MoonIcon, PencilIcon, PlusIcon, RefreshCwIcon, SunriseIcon, SunsetIcon, SunIcon, Trash2Icon } from "lucide-react";
+import { CameraIcon, CropIcon, DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, LocateFixedIcon, LogOutIcon, MapPinIcon, MoonIcon, MoveIcon, PencilIcon, PlusIcon, RefreshCwIcon, RotateCcwIcon, RotateCwIcon, SunriseIcon, SunsetIcon, SunIcon, Trash2Icon, ZoomInIcon } from "lucide-react";
 
 type Status = "未拍摄" | "待补拍" | "已毕业";
 type Priority = "低" | "中" | "高";
@@ -106,6 +109,36 @@ async function compressForUpload(source:File){
     if(!result||result.size>uploadTargetBytes)throw new Error(`${source.name} 压缩后仍超过 4MB`);
     return new File([result],`${source.name.replace(/\.[^.]+$/,"")}.jpg`,{type:"image/jpeg",lastModified:source.lastModified});
   }finally{bitmap.close()}
+}
+type CropAspect="original"|"1:1"|"4:3"|"3:2"|"16:9";
+type SampleImageAdjustment={rotation:0|90|180|270;zoom:number;focusX:number;focusY:number;aspect:CropAspect};
+const defaultImageAdjustment:SampleImageAdjustment={rotation:0,zoom:1,focusX:50,focusY:50,aspect:"original"};
+const cropAspectValue=(aspect:CropAspect,width:number,height:number)=>aspect==="original"?width/height:aspect==="1:1"?1:aspect==="4:3"?4/3:aspect==="3:2"?3/2:16/9;
+const normalizeRotation=(value:number)=>([0,90,180,270].includes((value+360)%360)?(value+360)%360:0) as SampleImageAdjustment["rotation"];
+function rotatedImageCanvas(bitmap:ImageBitmap,rotation:number,maxSourceSide:number){
+  const scale=Math.min(1,maxSourceSide/Math.max(bitmap.width,bitmap.height));const sourceWidth=Math.max(1,Math.round(bitmap.width*scale));const sourceHeight=Math.max(1,Math.round(bitmap.height*scale));const vertical=rotation%180!==0;
+  const canvas=document.createElement("canvas");canvas.width=vertical?sourceHeight:sourceWidth;canvas.height=vertical?sourceWidth:sourceHeight;
+  const context=canvas.getContext("2d");if(!context)throw new Error("当前浏览器无法处理图片");context.translate(canvas.width/2,canvas.height/2);context.rotate(rotation*Math.PI/180);context.drawImage(bitmap,-sourceWidth/2,-sourceHeight/2,sourceWidth,sourceHeight);return canvas;
+}
+function cropImageCanvas(bitmap:ImageBitmap,adjustment:SampleImageAdjustment,maxOutputSide=4200,maxSourceSide=5000){
+  const source=rotatedImageCanvas(bitmap,adjustment.rotation,maxSourceSide);const aspect=cropAspectValue(adjustment.aspect,source.width,source.height);let cropWidth=source.width;let cropHeight=cropWidth/aspect;if(cropHeight>source.height){cropHeight=source.height;cropWidth=cropHeight*aspect}cropWidth/=adjustment.zoom;cropHeight/=adjustment.zoom;
+  const sourceX=(source.width-cropWidth)*Math.min(100,Math.max(0,adjustment.focusX))/100;const sourceY=(source.height-cropHeight)*Math.min(100,Math.max(0,adjustment.focusY))/100;const outputScale=Math.min(1,maxOutputSide/Math.max(cropWidth,cropHeight));const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(cropWidth*outputScale));canvas.height=Math.max(1,Math.round(cropHeight*outputScale));const context=canvas.getContext("2d");if(!context)throw new Error("当前浏览器无法裁切图片");context.imageSmoothingEnabled=true;context.imageSmoothingQuality="high";context.drawImage(source,sourceX,sourceY,cropWidth,cropHeight,0,0,canvas.width,canvas.height);return canvas;
+}
+async function exportEditedSample(url:string,name:string,adjustment:SampleImageAdjustment){
+  const response=await fetch(url,{cache:"force-cache"});if(!response.ok)throw new Error("原始样片读取失败，请重试");const source=await response.blob();let bitmap:ImageBitmap;try{bitmap=await createImageBitmap(source)}catch{throw new Error("这张样片无法进行裁切，请重新上传 JPG 图片")}
+  try{const canvas=cropImageCanvas(bitmap,adjustment);const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/jpeg",.92));if(!blob)throw new Error("图片导出失败，请重试");return compressForUpload(new File([blob],`${name.replace(/\.[^.]+$/,'')||"样片"}-edited.jpg`,{type:"image/jpeg",lastModified:Date.now()}))}finally{bitmap.close()}
+}
+function SampleCropEditor({url,value,onChange}:{url:string;value:SampleImageAdjustment;onChange:(value:SampleImageAdjustment)=>void}){
+  const canvasRef=useRef<HTMLCanvasElement>(null);const bitmapRef=useRef<ImageBitmap|null>(null);const dragRef=useRef<{x:number;y:number;focusX:number;focusY:number}|null>(null);const [loading,setLoading]=useState(true);const [error,setError]=useState("");
+  useEffect(()=>{let active=true;setLoading(true);setError("");fetch(url,{cache:"force-cache"}).then(response=>{if(!response.ok)throw new Error();return response.blob()}).then(createImageBitmap).then(bitmap=>{if(!active){bitmap.close();return}bitmapRef.current?.close();bitmapRef.current=bitmap;setLoading(false)}).catch(()=>{if(active){setLoading(false);setError("图片预览读取失败")}});return()=>{active=false;bitmapRef.current?.close();bitmapRef.current=null}},[url]);
+  useEffect(()=>{const bitmap=bitmapRef.current;const canvas=canvasRef.current;if(!bitmap||!canvas)return;try{const preview=cropImageCanvas(bitmap,value,960,1600);canvas.width=preview.width;canvas.height=preview.height;canvas.getContext("2d")?.drawImage(preview,0,0)}catch{setError("图片预览生成失败")}},[value,loading]);
+  function move(event:React.PointerEvent<HTMLCanvasElement>){const origin=dragRef.current;if(!origin)return;event.preventDefault();const rect=event.currentTarget.getBoundingClientRect();onChange({...value,focusX:Math.min(100,Math.max(0,origin.focusX-(event.clientX-origin.x)/rect.width*100/value.zoom)),focusY:Math.min(100,Math.max(0,origin.focusY-(event.clientY-origin.y)/rect.height*100/value.zoom))})}
+  return <section className="sampleCropEditor" aria-label="旋转和裁切样片">
+    <div className="sampleCropViewport" data-loading={loading||undefined}>{loading?<Spinner/>:error?<span>{error}</span>:<canvas ref={canvasRef} aria-label="裁切预览；拖动图片调整取景位置" onPointerDown={event=>{event.currentTarget.setPointerCapture(event.pointerId);dragRef.current={x:event.clientX,y:event.clientY,focusX:value.focusX,focusY:value.focusY}}} onPointerMove={move} onPointerUp={()=>{dragRef.current=null}} onPointerCancel={()=>{dragRef.current=null}}/>}<span className="cropGrid" aria-hidden="true"/></div>
+    <div className="sampleCropTools"><div className="cropToolRow"><span><CropIcon/>裁切比例</span><ToggleGroup variant="outline" size="sm" value={[value.aspect]} onValueChange={items=>{const aspect=items[0] as CropAspect|undefined;if(aspect)onChange({...value,aspect})}} aria-label="选择裁切比例">{(["original","1:1","4:3","3:2","16:9"] as CropAspect[]).map(aspect=><ToggleGroupItem key={aspect} value={aspect}>{aspect==="original"?"原图":aspect}</ToggleGroupItem>)}</ToggleGroup></div>
+    <div className="cropToolRow"><span><ZoomInIcon/>缩放 {value.zoom.toFixed(1)}×</span><Slider value={value.zoom} min={1} max={3} step={.1} onValueChange={zoom=>onChange({...value,zoom:Number(zoom)})} aria-label="调整图片缩放"/></div>
+    <div className="cropToolActions"><Button type="button" variant="outline" onClick={()=>onChange({...value,rotation:normalizeRotation(value.rotation-90)})}><RotateCcwIcon data-icon="inline-start"/>向左旋转</Button><Button type="button" variant="outline" onClick={()=>onChange({...value,rotation:normalizeRotation(value.rotation+90)})}><RotateCwIcon data-icon="inline-start"/>向右旋转</Button><Button type="button" variant="ghost" onClick={()=>onChange(defaultImageAdjustment)}>重置</Button><span><MoveIcon/>拖动预览调整画面中心</span></div></div>
+  </section>
 }
 const uploadDb=()=>new Promise<IDBDatabase>((resolve,reject)=>{const request=indexedDB.open("shancheng-upload-queue",1);request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains("jobs"))request.result.createObjectStore("jobs",{keyPath:"jobId"})};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});
 async function uploadJobs(){const db=await uploadDb();return new Promise<UploadJob[]>((resolve,reject)=>{const request=db.transaction("jobs","readonly").objectStore("jobs").getAll();request.onsuccess=()=>resolve(request.result as UploadJob[]);request.onerror=()=>reject(request.error)})}
@@ -490,7 +523,7 @@ function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEd
   const [query,setQuery]=useState(""); const [district,setDistrict]=useState("全部行政区"); const [theme,setTheme]=useState("全部主题"); const [category,setCategory]=useState("全部归类");
   const [galleryPage,setGalleryPage]=useState({key:"",limit:60});
   const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState(""); const [uploadError,setUploadError]=useState("");
-  const [editingMeta,setEditingMeta]=useState(false); const [savingMeta,setSavingMeta]=useState(false); const [editError,setEditError]=useState("");
+  const [savingMeta,setSavingMeta]=useState(false); const [editError,setEditError]=useState("");const [imageAdjustment,setImageAdjustment]=useState<SampleImageAdjustment>(defaultImageAdjustment);
   const [draggedGroup,setDraggedGroup]=useState<string|null>(null);const [dropTarget,setDropTarget]=useState<string|null>(null);const [pendingMerge,setPendingMerge]=useState<{source:string;target:string}|null>(null);const [merging,setMerging]=useState(false);
   const pressTimer=useRef<number|undefined>(undefined);const pressOrigin=useRef<{x:number;y:number}|null>(null);const touchDrag=useRef<string|null>(null);const touchTarget=useRef<string|null>(null);const suppressClick=useRef(false);
   const [queue,setQueue]=useState<UploadJob[]>([]); const [broken,setBroken]=useState<Set<string>>(new Set()); const [deleting,setDeleting]=useState<Set<string>>(new Set());
@@ -571,8 +604,9 @@ function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEd
   async function discardUpload(jobId:string){await deleteUploadJob(jobId).catch(()=>{});setQueue(items=>items.filter(item=>item.jobId!==jobId))}
   async function reupload(item:GallerySample,file:File|undefined){if(!file||item.local||!(await ensureAdmin()))return;if(!supportedUploadTypes.has(file.type)){alert("请先转换为 JPG、PNG、WebP、GIF 或 AVIF");return}setUploading(true);setProgress(file.size>uploadLimitBytes?"正在压缩替换图片…":"正在替换图片…");let prepared:File;try{prepared=await compressForUpload(file)}catch(reason){alert(reason instanceof Error?reason.message:"图片压缩失败");setUploading(false);setProgress("");return}const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(file.name)}`,{method:"PUT",headers:{"content-type":prepared.type},body:prepared});const data=await r.json().catch(()=>({}));setUploading(false);setProgress("");if(!r.ok){alert(data.error||"重新上传失败");return}setActive(null);setBroken(items=>{const next=new Set(items);next.delete(item.id);return next});await load(true)}
   async function remove(item:GallerySample){if(item.local){notify("本地样片不能在画廊中删除","error");return}if(!confirm("删除这张云端样片？删除后不可恢复。")||!(await ensureAdmin()))return;setDeleting(items=>new Set(items).add(item.id));try{const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}`,{method:"DELETE"});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"删除失败，请重试");setRemote(items=>items.filter(sample=>sample.id!==item.id));setBroken(items=>{const next=new Set(items);next.delete(item.id);return next});setActive(current=>current?.id===item.id?null:current);notify("样片已删除","success")}catch(reason){notify(reason instanceof Error?reason.message:"删除失败，请重试","error")}finally{setDeleting(items=>{const next=new Set(items);next.delete(item.id);return next})}}
-  async function startEdit(item:GallerySample){if(item.local){notify("本地样片上传后才能编辑","error");return}setActive(item);setDraft({originalName:item.originalName||"",location:item.location||"",themeCategory:item.themeCategory||inferThemeCategory(item.theme),device:item.device||"",shootTime:item.shootTime||"",stationId:item.stationId||"",stationName:item.stationName||"",stationDescription:item.stationDescription||"",subjectDescription:item.subjectDescription||"",note:item.note||""});setEditError("");if(!(await ensureAdmin()))return;setEditingMeta(true)}
-  async function saveEdit(){if(!active||active.local)return;if(!(await ensureAdmin()))return;setSavingMeta(true);setEditError("");try{const r=await fetch(sampleApi,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:active.id,...draft})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||`保存失败（${r.status}）`);const updated={...active,...data.item,url:active.url};setRemote(items=>items.map(item=>item.id===active.id?updated:item));setEditingMeta(false);setActive(null);notify("修改成功","success")}catch(reason){const message=reason instanceof Error?reason.message:"保存失败，请重试";setEditError(message);notify(message,"error")}finally{setSavingMeta(false)}}
+  async function startEdit(item:GallerySample){if(item.local){notify("本地样片上传后才能编辑","error");return}if(!(await ensureAdmin()))return;setActive(item);setDraft({originalName:item.originalName||"",location:item.location||"",themeCategory:item.themeCategory||inferThemeCategory(item.theme),device:item.device||"",shootTime:item.shootTime||"",stationId:item.stationId||"",stationName:item.stationName||"",stationDescription:item.stationDescription||"",subjectDescription:item.subjectDescription||"",note:item.note||""});setImageAdjustment(defaultImageAdjustment);setEditError("")}
+  function closeEditor(){if(savingMeta)return;setActive(null);setImageAdjustment(defaultImageAdjustment);setEditError("")}
+  async function saveEdit(){if(!active||active.local)return;if(!(await ensureAdmin()))return;setSavingMeta(true);setEditError("");const imageChanged=imageAdjustment.rotation!==0||imageAdjustment.zoom!==1||imageAdjustment.focusX!==50||imageAdjustment.focusY!==50||imageAdjustment.aspect!=="original";try{let response:Response;if(imageChanged){const file=await exportEditedSample(active.url,draft.originalName||active.originalName||"样片",imageAdjustment);const form=new FormData();form.append("file",file);Object.entries(draft).forEach(([key,value])=>form.append(key,String(value||"")));response=await fetch(`${sampleApi}?id=${encodeURIComponent(active.id)}`,{method:"PUT",body:form})}else response=await fetch(sampleApi,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:active.id,...draft})});const data=await response.json().catch(()=>({}));if(!response.ok||!data.item)throw new Error(data.error||`保存失败（${response.status}）`);const updated=normalizeGallerySample({...active,...data.item});setRemote(items=>items.map(item=>item.id===active.id?updated:item));setActive(null);setImageAdjustment(defaultImageAdjustment);notify(imageChanged?"图片裁切和样片信息已保存":"样片信息已保存","success")}catch(reason){const message=reason instanceof Error?reason.message:"保存失败，请重试";setEditError(message);notify(message,"error")}finally{setSavingMeta(false)}}
   return <section className="galleryPanel">
 <div className="galleryToolbar">
 <div>
@@ -600,7 +634,7 @@ function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEd
 <option key={x}>{x}</option>)}</select>
 <span>{shown.length} 张样片 · 已显示 {Math.min(groupDisplayLimit,sampleGroups.length)} / {sampleGroups.length} 组</span>
 </div>{loading?<Empty className="galleryEmpty"><EmptyHeader><EmptyMedia variant="icon"><Spinner/></EmptyMedia><EmptyTitle>正在整理样片</EmptyTitle><EmptyDescription>正在加载云端照片和机位信息。</EmptyDescription></EmptyHeader></Empty>:shown.length?<><div className="masonry">{sampleGroups.slice(0,groupDisplayLimit).map(groupItem=>{const item=groupItem.cover;return <article className={`sampleCard ${draggedGroup===groupItem.key?"sampleDragging":""} ${dropTarget===groupItem.key?"sampleDropTarget":""}`} key={groupItem.key} data-gallery-group={groupItem.key} draggable={!item.local} onDragStart={event=>{event.dataTransfer.effectAllowed="move";setDraggedGroup(groupItem.key)}} onDragOver={event=>{event.preventDefault();event.dataTransfer.dropEffect="move";setDropTarget(groupItem.key)}} onDragLeave={()=>setDropTarget(current=>current===groupItem.key?null:current)} onDrop={event=>{event.preventDefault();prepareMerge(draggedGroup,groupItem.key)}} onDragEnd={()=>{setDraggedGroup(null);setDropTarget(null)}} onPointerDown={event=>pointerDown(groupItem.key,event)} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd}>
-<button type="button" className="sampleCardOpen" aria-label={`查看${item.originalName||"样片"}`} onClick={event=>{if(suppressClick.current){event.preventDefault();return}setActive(item)}}>
+<button type="button" className="sampleCardOpen" aria-label={`编辑${item.originalName||"样片"}`} onClick={event=>{if(suppressClick.current){event.preventDefault();return}startEdit(item)}}>
 {broken.has(item.id)?<span className="brokenSample"><b>图片无法显示</b><small>点击查看并重新上传</small></span>:<img src={item.url} alt={`${item.location} ${item.stationName}`} loading="lazy" decoding="async" fetchPriority="low" onError={()=>setBroken(items=>new Set(items).add(item.id))}/>}{groupItem.samples.length>1&&<b className="sampleCount">组图 · {groupItem.samples.length} 张</b>}
 <span>
 <b>{item.originalName||"未命名样片"}</b>
@@ -645,95 +679,24 @@ function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEd
 </div>
 </div>
 </div>}
-  {active&&<div className="lightbox" role="dialog" aria-modal="true" aria-label="样片详情">
-<div className="lightboxImage">
-{broken.has(active.id)?<div className="brokenLightbox"><strong>这张图片无法解码</strong><span>可在右侧保留原信息并重新上传可显示的图片。</span></div>:<img src={active.url} alt={`${active.location} ${active.stationName}`} decoding="async" fetchPriority="high" onError={()=>setBroken(items=>new Set(items).add(active.id))}/>}
-{activeSamples.length>1&&<div className="groupThumbs">{activeSamples.map(item=><button className={item.id===active.id?"active":""} key={item.id} onClick={()=>{setActive(item);setEditingMeta(false)}}><img src={item.url} alt={item.originalName} loading="lazy" decoding="async" fetchPriority="low"/></button>)}</div>}
-</div>
-<aside>
-<button className="lightboxClose" onClick={()=>{setActive(null);setEditingMeta(false)}}>×</button>
-<p className="eyebrow">REFERENCE DETAIL</p>{editingMeta?<div className="sampleEdit">
-<h2>编辑样片信息</h2>
-<label>样片名称<input value={draft.originalName} onChange={e=>setDraft({...draft,originalName:e.target.value})}/>
-</label>
-<label>拍摄设备<select value={draft.device||""} onChange={e=>setDraft({...draft,device:e.target.value})}>
-<option value="">未填写</option>
-<option>相机</option>
-<option>无人机</option>
-</select>
-</label>
-<label>关联机位<select value={draft.stationName||""} onChange={e=>{const station=activeTask?.stations?.find(x=>x.name===e.target.value);setDraft({...draft,stationId:station?.id||"",stationName:e.target.value,stationDescription:station?.description||draft.stationDescription})}}>
-<option value="">未关联机位</option>
-{draft.stationName&&!activeTask?.stations?.some(x=>x.name===draft.stationName)&&<option value={draft.stationName}>{draft.stationName}</option>}
-{(activeTask?.stations||[]).map(station=><option key={station.id} value={station.name}>{station.name}</option>)}
-</select>
-</label>
-<label>拍摄时间<select value={draft.shootTime||""} onChange={e=>setDraft({...draft,shootTime:e.target.value})}>
-<option value="">未填写</option>
-{shootTimes.map(value=><option key={value}>{value}</option>)}
-</select>
-</label>
-<label>拍摄位置<input value={draft.location} placeholder="例如：观景台西侧栏杆" onChange={e=>setDraft({...draft,location:e.target.value})}/>
-</label>
-<label>主题归类<select value={draft.themeCategory||""} onChange={e=>setDraft({...draft,themeCategory:e.target.value})}>
-<option value="">未归类</option>{categories.map(x=>
-<option key={x}>{x}</option>)}</select>
-</label>
-<label>机位说明<textarea value={draft.stationDescription} onChange={e=>setDraft({...draft,stationDescription:e.target.value})}/>
-</label>
-<label>拍摄主体说明<textarea value={draft.subjectDescription||""} onChange={e=>setDraft({...draft,subjectDescription:e.target.value})}/>
-</label>
-<label>样片备注<textarea value={draft.note} onChange={e=>setDraft({...draft,note:e.target.value})}/>
-</label>{editError&&<p className="uploadError">{editError}</p>}<div className="sampleEditActions">
-<button onClick={()=>setEditingMeta(false)}>取消</button>
-<button className="primary" disabled={savingMeta||!draft.originalName.trim()} onClick={saveEdit}>{savingMeta?"正在保存…":"保存修改"}</button>
-</div>
-</div>:<>
-<button className="editableTitle" disabled={active.local} onClick={()=>startEdit(active)}>{active.originalName||"未命名样片"}<small>{active.local?"本地样片":"点击编辑"}</small></button>
-<span className="galleryTag">{active.district}</span>
-<dl>
-<div>
-<dt>样片名称</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.originalName||"样片"}<small>点击编辑</small></button></dd>
-</div>
-<div>
-<dt>拍摄位置</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.location||"未填写"}<small>点击编辑</small></button></dd>
-</div>
-<div>
-<dt>拍摄设备</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.device||"未填写"}<small>点击编辑</small></button></dd>
-</div>
-<div>
-<dt>拍摄时间</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.shootTime||"未填写"}<small>点击编辑</small></button></dd>
-</div>
-<div>
-<dt>主题归类</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.themeCategory||"未归类"}<small>点击编辑</small></button></dd>
-</div>
-<div>
-<dt>关联机位</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.stationName||"未指定"}<small>点击编辑</small></button></dd>
-</div>
-<div>
-<dt>机位说明</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.stationDescription||"暂无说明"}<small>点击编辑</small></button></dd>
-</div>
-<div>
-<dt>拍摄主题</dt>
-<dd>{active.theme||"常规记录"}</dd>
-</div>
-<div>
-<dt>拍摄主体说明</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.subjectDescription||"暂无说明"}<small>点击编辑</small></button></dd>
-</div>
-<div>
-<dt>样片备注</dt>
-<dd><button className="editableDetail" disabled={active.local} onClick={()=>startEdit(active)}>{active.note||"暂无备注"}<small>点击编辑</small></button></dd>
-</div>
-</dl>{!active.local&&<label className="soft full reuploadButton">{broken.has(active.id)?"重新上传图片":"替换图片"}<input hidden type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" onChange={e=>reupload(active,e.target.files?.[0])}/></label>}<button className="primary full" onClick={()=>onEdit(Number(active.taskId))}>打开对应拍摄任务</button>{!active.local&&<button className="dangerText" onClick={()=>remove(active)}>删除这张样片</button>}</>}</aside>
-</div>}<AlertDialog open={Boolean(pendingMerge)} onOpenChange={open=>{if(!open&&!merging)setPendingMerge(null)}}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>合并同机位样片</AlertDialogTitle><AlertDialogDescription>合并后，画廊首页会以一张组图卡片集中展示；原始图片不会被删除或覆盖。</AlertDialogDescription></AlertDialogHeader>{pendingMerge&&<div className="mergePreview">{[pendingMerge.source,pendingMerge.target].map(key=>{const item=sampleGroups.find(groupItem=>groupItem.key===key);return item&&<article key={key}><img src={item.cover.url} alt={item.cover.originalName}/><span><b>{item.cover.originalName}</b><small>{item.samples.length} 张 · {item.cover.stationName}</small></span></article>})}</div>}<AlertDialogFooter><AlertDialogCancel disabled={merging}>取消</AlertDialogCancel><AlertDialogAction disabled={merging} onClick={mergeGroups}>{merging?<><Spinner data-icon="inline-start"/>正在合并</>:"确认合并"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></section>
+  <Dialog open={Boolean(active)} onOpenChange={open=>{if(!open)closeEditor()}}>{active&&<DialogContent className="sampleEditorDialog" showCloseButton={!savingMeta}>
+    <DialogHeader className="sr-only"><DialogTitle>编辑样片</DialogTitle><DialogDescription>旋转、裁切并修改样片信息。</DialogDescription></DialogHeader>
+    <div className="sampleEditorMedia">{broken.has(active.id)?<div className="brokenLightbox"><strong>这张图片无法解码</strong><span>请在右侧重新上传可显示的图片。</span></div>:<SampleCropEditor url={active.url} value={imageAdjustment} onChange={setImageAdjustment}/>} {activeSamples.length>1&&<div className="groupThumbs">{activeSamples.map(item=><button className={item.id===active.id?"active":""} key={item.id} onClick={()=>startEdit(item)}><img src={item.url} alt={item.originalName} loading="lazy" decoding="async" fetchPriority="low"/></button>)}</div>}</div>
+    <aside className="sampleEditorPanel"><div className="sampleEditorHeading"><div><p className="eyebrow">REFERENCE EDITOR</p><h2>编辑样片</h2><p>图片处理和资料修改会在点击保存后一次提交。</p></div><Badge variant="secondary">{active.district}</Badge></div>
+      <FieldGroup className="sampleEditFields">
+        <Field><FieldLabel htmlFor="sample-name">样片名称</FieldLabel><Input id="sample-name" value={draft.originalName} onChange={e=>setDraft({...draft,originalName:e.target.value})}/></Field>
+        <div className="sampleEditPair"><Field><FieldLabel htmlFor="sample-device">拍摄设备</FieldLabel><select id="sample-device" value={draft.device||""} onChange={e=>setDraft({...draft,device:e.target.value})}><option value="">未填写</option><option>相机</option><option>无人机</option></select></Field><Field><FieldLabel htmlFor="sample-time">拍摄时间</FieldLabel><select id="sample-time" value={draft.shootTime||""} onChange={e=>setDraft({...draft,shootTime:e.target.value})}><option value="">未填写</option>{shootTimes.map(value=><option key={value}>{value}</option>)}</select></Field></div>
+        <Field><FieldLabel htmlFor="sample-station">关联机位</FieldLabel><select id="sample-station" value={draft.stationName||""} onChange={e=>{const station=activeTask?.stations?.find(x=>x.name===e.target.value);setDraft({...draft,stationId:station?.id||"",stationName:e.target.value,stationDescription:station?.description||draft.stationDescription})}}><option value="">未关联机位</option>{draft.stationName&&!activeTask?.stations?.some(x=>x.name===draft.stationName)&&<option value={draft.stationName}>{draft.stationName}</option>}{(activeTask?.stations||[]).map(station=><option key={station.id} value={station.name}>{station.name}</option>)}</select></Field>
+        <Field><FieldLabel htmlFor="sample-location">拍摄位置</FieldLabel><Input id="sample-location" value={draft.location} placeholder="例如：观景台西侧栏杆" onChange={e=>setDraft({...draft,location:e.target.value})}/></Field>
+        <Field><FieldLabel htmlFor="sample-category">主题归类</FieldLabel><select id="sample-category" value={draft.themeCategory||""} onChange={e=>setDraft({...draft,themeCategory:e.target.value})}><option value="">未归类</option>{categories.map(x=><option key={x}>{x}</option>)}</select></Field>
+        <Field><FieldLabel htmlFor="sample-station-description">机位说明</FieldLabel><Textarea id="sample-station-description" value={draft.stationDescription} onChange={e=>setDraft({...draft,stationDescription:e.target.value})}/></Field>
+        <Field><FieldLabel htmlFor="sample-subject">拍摄主体说明</FieldLabel><Textarea id="sample-subject" value={draft.subjectDescription||""} onChange={e=>setDraft({...draft,subjectDescription:e.target.value})}/></Field>
+        <Field><FieldLabel htmlFor="sample-note">样片备注</FieldLabel><Textarea id="sample-note" value={draft.note} onChange={e=>setDraft({...draft,note:e.target.value})}/></Field>
+      </FieldGroup>
+      {editError&&<FieldError className="sampleEditError">{editError}</FieldError>}
+      <DialogFooter className="sampleEditorFooter"><label className={buttonVariants({variant:"outline"})}>{broken.has(active.id)?"重新上传图片":"替换原图"}<input hidden type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" onChange={e=>reupload(active,e.target.files?.[0])}/></label><Button type="button" variant="ghost" onClick={()=>onEdit(Number(active.taskId))}>打开拍摄任务</Button><Button type="button" variant="outline" disabled={savingMeta} onClick={closeEditor}>取消</Button><Button type="button" disabled={savingMeta||!draft.originalName.trim()} onClick={saveEdit}>{savingMeta?<><Spinner data-icon="inline-start"/>正在保存</>:"保存修改"}</Button></DialogFooter>
+    </aside>
+  </DialogContent>}</Dialog><AlertDialog open={Boolean(pendingMerge)} onOpenChange={open=>{if(!open&&!merging)setPendingMerge(null)}}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>合并同机位样片</AlertDialogTitle><AlertDialogDescription>合并后，画廊首页会以一张组图卡片集中展示；原始图片不会被删除或覆盖。</AlertDialogDescription></AlertDialogHeader>{pendingMerge&&<div className="mergePreview">{[pendingMerge.source,pendingMerge.target].map(key=>{const item=sampleGroups.find(groupItem=>groupItem.key===key);return item&&<article key={key}><img src={item.cover.url} alt={item.cover.originalName}/><span><b>{item.cover.originalName}</b><small>{item.samples.length} 张 · {item.cover.stationName}</small></span></article>})}</div>}<AlertDialogFooter><AlertDialogCancel disabled={merging}>取消</AlertDialogCancel><AlertDialogAction disabled={merging} onClick={mergeGroups}>{merging?<><Spinner data-icon="inline-start"/>正在合并</>:"确认合并"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></section>
 }
 
 function Calendar({month,setMonth,events,onSave,onDelete,onSync}:{month:string;setMonth:(m:string)=>void;events:CalendarEvent[];onSave:(item:CalendarEvent,isNew:boolean)=>Promise<boolean>;onDelete:(id:string)=>Promise<boolean>;onSync:()=>void}){

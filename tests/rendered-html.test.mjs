@@ -47,13 +47,18 @@ test("point cards expose themes, unfinished tasks and field readiness", async ()
   assert.match(css, /\.pointCardMeta/);
 });
 
-test("gallery edit controls are independent from the sample card opener", async () => {
+test("gallery opens one editor with crop, rotate and a single name field", async () => {
   const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  const api = await readFile(new URL("../app/api/samples/route.ts", import.meta.url), "utf8");
   const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(source, /className="sampleCardOpen"/);
   assert.doesNotMatch(source, /<article role="button" tabIndex=\{0\} className=\{`sampleCard/);
-  assert.match(source, /setActive\(item\);setDraft\([\s\S]*?if\(!\(await ensureAdmin\(\)\)\)return;setEditingMeta\(true\)/);
-  assert.match(css, /\.lightbox\{[^}]*z-index:40/);
+  assert.match(source, /className="sampleCardOpen"[\s\S]*?startEdit\(item\)/);
+  assert.match(source, /async function startEdit[\s\S]*?if\(!\(await ensureAdmin\(\)\)\)return;setActive\(item\)/);
+  assert.equal(source.match(/htmlFor="sample-name"/g)?.length, 1);
+  for (const feature of ["SampleCropEditor", "exportEditedSample", "ToggleGroup", "Slider", "RotateCwIcon"]) assert.match(source, new RegExp(feature));
+  assert.match(api, /requestType\.includes\("multipart\/form-data"\)/);
+  assert.match(css, /\.sampleEditorDialog\[data-slot="dialog-content"\]/);
 });
 
 test("map weather includes layered cloud forecasts and calendar includes moon status", async () => {

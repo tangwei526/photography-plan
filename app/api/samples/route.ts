@@ -128,6 +128,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   if (!secured(request)) return Response.json({ error: "需要管理密钥" }, { status: 401, headers: cors(request) });
   const url = new URL(request.url);
+  const requestType = request.headers.get("content-type") || "";
   const action = url.searchParams.get("upload");
   if (action === "part") {
     const id = cleanText(url.searchParams.get("id"), 120); const uploadId = cleanText(url.searchParams.get("uploadId"), 220); const partNumber = Number(url.searchParams.get("partNumber"));
@@ -138,17 +139,37 @@ export async function PUT(request: Request) {
   }
 
   const id = cleanText(url.searchParams.get("id"), 120);
-  const type = cleanText(request.headers.get("content-type"), 80);
-  const size = Number(request.headers.get("content-length") || 0);
   if (!id || id.includes("/")) return Response.json({ error: "无效样片" }, { status: 400, headers: cors(request) });
+  if (requestType.includes("multipart/form-data")) {
+    const form = await request.formData().catch(() => null);
+    const file = form?.get("file");
+    if (!(file instanceof File) || !displayableImageTypes.has(file.type)) return Response.json({ error: "请改用 JPG、PNG、WebP、GIF 或 AVIF" }, { status: 415, headers: cors(request) });
+    if (file.size <= 0 || file.size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400, headers: cors(request) });
+    const existing = await bucket().get(`samples/${id}`);
+    if (!existing) return Response.json({ error: "样片不存在" }, { status: 404, headers: cors(request) });
+    const metadata: Record<string,string> = { ...(existing.customMetadata || {}) };
+    const fields: [string,number][] = [["originalName",200],["location",160],["themeCategory",40],["device",40],["shootTime",40],["stationId",80],["stationName",160],["stationDescription",500],["subjectDescription",500],["note",500],["groupId",80]];
+    for (const [field,max] of fields) if (form?.has(field)) metadata[field] = clean(form.get(field), max).trim();
+    const replacementId = `${crypto.randomUUID()}.${extensionFor(file.type)}`;
+    await bucket().put(`samples/${replacementId}`, file.stream(), { httpMetadata: { contentType: file.type }, customMetadata: metadata });
+    const replacement = await bucket().head(`samples/${replacementId}`);
+    if (!replacement) return Response.json({ error: "图片保存后暂时无法读取，请刷新画廊" }, { status: 500, headers: cors(request) });
+    await bucket().delete(`samples/${id}`);
+    return Response.json({ ok: true, item: sampleItem(replacement, replacementId) }, { headers: jsonHeaders(request) });
+  }
+
+  const type = cleanText(requestType, 80);
+  const size = Number(request.headers.get("content-length") || 0);
   if (!displayableImageTypes.has(type)) return Response.json({ error: "请改用 JPG、PNG、WebP、GIF 或 AVIF" }, { status: 415, headers: cors(request) });
   if (size > 4 * 1024 * 1024) return Response.json({ error: "图片需压缩到 4MB 以内" }, { status: 400, headers: cors(request) });
   const existing = await bucket().get(`samples/${id}`);
   if (!existing) return Response.json({ error: "样片不存在" }, { status: 404, headers: cors(request) });
   const replacementId = `${crypto.randomUUID()}.${extensionFor(type)}`;
   await bucket().put(`samples/${replacementId}`, request.body, { httpMetadata: { contentType: type }, customMetadata: { ...(existing.customMetadata || {}), originalName: cleanText(url.searchParams.get("name") || "重新上传样片", 200) } });
+  const replacement = await bucket().head(`samples/${replacementId}`);
+  if (!replacement) return Response.json({ error: "图片保存后暂时无法读取，请重试" }, { status: 500, headers: cors(request) });
   await bucket().delete(`samples/${id}`);
-  return Response.json({ ok: true, id: replacementId, url: `/api/samples?id=${encodeURIComponent(replacementId)}` }, { headers: cors(request) });
+  return Response.json({ ok: true, id: replacementId, url: `/api/samples?id=${encodeURIComponent(replacementId)}`, item: sampleItem(replacement, replacementId) }, { headers: cors(request) });
 }
 
 export async function PATCH(request: Request) {
