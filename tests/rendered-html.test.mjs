@@ -36,3 +36,13 @@ test("ships Soft UI tokens for light and dark themes", async () => {
   assert.match(css, /\[data-theme="dark"\]\{[\s\S]*?--soft-highlight:#2b312e/);
   assert.match(css, /box-shadow:var\(--soft-raised\)/);
 });
+
+test("point cards expose themes, unfinished tasks and field readiness", async () => {
+  const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  for (const detail of ["pointThemeTags", "待拍摄", "待补拍", "cloudSampleCountByTask", "已定位"]) {
+    assert.match(source, new RegExp(detail));
+  }
+  assert.match(css, /\.pointTaskState-retake/);
+  assert.match(css, /\.pointCardMeta/);
+});

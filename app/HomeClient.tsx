@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast as shadcnToast } from "@/components/ui/toast";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, LogOutIcon, MoonIcon, PencilIcon, PlusIcon, SunIcon, Trash2Icon } from "lucide-react";
+import { CameraIcon, DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, LogOutIcon, MapPinIcon, MoonIcon, PencilIcon, PlusIcon, SunIcon, Trash2Icon } from "lucide-react";
 
 type Status = "未拍摄" | "待补拍" | "已毕业";
 type Priority = "低" | "中" | "高";
@@ -180,6 +180,7 @@ export default function Home(){
   const [routeIds,setRouteIds]=useState<number[]>([]); const [route,setRoute]=useState<RouteInfo|null>(null); const [routeLoading,setRouteLoading]=useState(false); const [amapLocating,setAmapLocating]=useState(false); const amapSyncing=useRef(false);
   const [weather,setWeather]=useState<WeatherDay[]>([]); const [weatherLoading,setWeatherLoading]=useState(false); const [weatherError,setWeatherError]=useState(""); const [month,setMonth]=useState(currentMonth);
   const [calendarEvents,setCalendarEvents]=useState<CalendarEvent[]>([]);
+  const [cloudSamples,setCloudSamples]=useState<GallerySample[]>([]);
   const [themeRecords,setThemeRecords]=useState<ThemeRecord[]>(()=>defaultThemeCategories.map((name,index)=>({id:`fallback-${index}`,name})));
   const [adminDialogOpen,setAdminDialogOpen]=useState(false); const [adminKey,setAdminKey]=useState(""); const [adminError,setAdminError]=useState(""); const [adminChecking,setAdminChecking]=useState(false);
   const adminResolver=useRef<((valid:boolean)=>void)|null>(null); const adminPromise=useRef<Promise<boolean>|null>(null);
@@ -200,9 +201,11 @@ export default function Home(){
   useEffect(()=>{try{const savedWorkspace=localStorage.getItem("shancheng-photo-workspace-v3");if(savedWorkspace){const parsed=JSON.parse(savedWorkspace) as {points:PointRecord[];tasks:Task[]};if(Array.isArray(parsed.points)&&Array.isArray(parsed.tasks)){setPoints(parsed.points.map(point=>({...point,themeNames:point.themeNames||[],stations:point.stations||[]})));setTasks(parsed.tasks.map(normalizeTask))}}else{const legacy=localStorage.getItem("shancheng-photo-tasks-v2")||localStorage.getItem("shancheng-photo-tasks-v1");if(legacy){const migrated=migrateWorkspace(JSON.parse(legacy) as Task[]);setPoints(migrated.points);setTasks(migrated.tasks)}}}catch{}setThemeMode(document.documentElement.dataset.theme==="dark"?"dark":"light");setHydrated(true)},[]);
   useEffect(()=>{if(hydrated)localStorage.setItem("shancheng-photo-workspace-v3",JSON.stringify({points,tasks}))},[points,tasks,hydrated]);
   useEffect(()=>{(async()=>{try{const response=await fetch("/api/planner",{cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json();setCalendarEvents(Array.isArray(data.events)?data.events:[]);if(Array.isArray(data.themes)&&data.themes.length)setThemeRecords(data.themes)}catch{}})()},[]);
+  useEffect(()=>{let active=true;fetch(sampleApi,{cache:"no-store"}).then(response=>response.ok?response.json():Promise.reject()).then(data=>{if(active)setCloudSamples(Array.isArray(data.items)?data.items:[])}).catch(()=>{});return()=>{active=false}},[]);
   useEffect(()=>{if(view==="map")locateAllPoints()},[view]);
   const taskViews=useMemo(()=>tasks.map(task=>{const point=points.find(item=>item.id===task.pointId);return point?{...task,district:point.district,location:point.location,longitude:point.longitude,latitude:point.latitude,coordinateSystem:point.coordinateSystem,stations:point.stations}:task}),[tasks,points]);
   const groups=useMemo(()=>group(points,taskViews),[points,taskViews]); const districts=useMemo(()=>[...new Set(points.map(point=>point.district))],[points]); const availableDistricts=useMemo(()=>[...new Set([...chongqingDistricts,...districts])],[districts]); const activeGroup=groups.find(item=>item.key===expanded);
+  const cloudSampleCountByTask=useMemo(()=>cloudSamples.reduce<Record<string,number>>((counts,sample)=>{const taskId=String(sample.taskId||"");if(taskId)counts[taskId]=(counts[taskId]||0)+1;return counts},{}),[cloudSamples]);
   const filtered=useMemo(()=>groups.filter(g=>(district==="全部行政区"||g.district===district)&&(status==="全部状态"||g.status===status)&&(priority==="全部优先级"||g.priority===priority)&&(category==="全部归类"||g.themeNames.includes(category))&&`${g.location} ${g.district} ${g.themeNames.join(" ")} ${g.tasks.map(t=>`${t.timeWindow||""} ${t.theme} ${t.methods} ${t.note}`).join(" ")}`.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>priorityRank[b.priority]-priorityRank[a.priority]),[groups,district,status,priority,category,query]);
   const counts={unshot:tasks.filter(t=>t.status==="未拍摄").length,redo:tasks.filter(t=>t.status==="待补拍").length,done:tasks.filter(t=>t.status==="已毕业").length};
   const mappedTasks=groups.map((groupItem,index)=>groupItem.tasks[0]||({id:-(index+1),pointId:groupItem.point.id,district:groupItem.district,location:groupItem.location,priority:groupItem.priority,theme:"待创建拍摄任务",timeWindow:"自定义",methods:[],media:[],clarity:"低",status:"未拍摄",note:"",sourceRow:0,longitude:groupItem.point.longitude,latitude:groupItem.point.latitude,coordinateSystem:groupItem.point.coordinateSystem,stations:groupItem.stations,samples:[]} as Task));
@@ -327,33 +330,40 @@ export default function Home(){
 <span>显示 {filtered.length} 个点位</span>
 <small>按优先级排序 · 点击卡片直接编辑点位</small>
 </div>
-<div className="spotList">{filtered.map(g=>
-<article className="locationCard" key={g.key}>
-<button className="locationSummary" onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}>
-<span className={`priorityBadge priority-${g.priority}`}>{g.priority}</span>
-<div className="locationName">
-<div>
-<h3>{g.location}</h3>
-<span>{g.district}</span>
-</div>
-<p>{g.themeNames.length?`标签：${g.themeNames.join("、")}`:"尚未添加创作主题"} · {g.tasks.length} 个拍摄任务 · {g.stations.length} 个机位</p>
-</div>
-<div className="taskProgress">
-<small>任务毕业</small>
-<strong>{g.tasks.filter(t=>t.status==="已毕业").length}/{g.tasks.length}</strong>
-<div>
-<i style={{width:`${g.tasks.length?g.tasks.filter(t=>t.status==="已毕业").length/g.tasks.length*100:0}%`}}/>
-</div>
-</div>
-<Badge variant={g.status==="待补拍"?"destructive":g.status==="已毕业"?"default":"secondary"}>{g.status}</Badge>
-<span className="chevron">↗</span>
-</button><div className="pointCardActions"><Tooltip><TooltipTrigger render={<Button variant="secondary" size="icon-sm"/>} aria-label={`编辑${g.location}`} onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}><PencilIcon/></TooltipTrigger><TooltipContent>编辑点位</TooltipContent></Tooltip><Tooltip><TooltipTrigger render={<Button variant="destructive" size="icon-sm"/>} aria-label={`删除${g.location}`} onClick={()=>removePointGroup(g)}><Trash2Icon/></TooltipTrigger><TooltipContent>删除点位</TooltipContent></Tooltip></div></article>)}</div>
+<div className="spotList">{filtered.map(g=>{
+  const doneTasks=g.tasks.filter(task=>task.status==="已毕业");
+  const unshotTasks=g.tasks.filter(task=>task.status==="未拍摄");
+  const retakeTasks=g.tasks.filter(task=>task.status==="待补拍");
+  const themes=[...new Set(g.themeNames.map(normalizeThemeName).filter(Boolean))];
+  const visibleThemes=themes.slice(0,3);
+  const completion=g.tasks.length?Math.round(doneTasks.length/g.tasks.length*100):0;
+  const sampleCount=g.tasks.reduce((total,task)=>total+(task.samples?.length||0)+(cloudSampleCountByTask[String(task.id)]||0),0);
+  const taskName=(task:Task)=>task.theme||task.timeWindow||"未命名任务";
+  return <article className="locationCard" key={g.key}>
+  <button className="locationSummary" onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}>
+  <div className="pointCardHeader"><span className={`priorityBadge priority-${g.priority}`}>{g.priority}优先</span><span className="pointDistrict">{g.district}</span><span className="pointCompletion">完成 {doneTasks.length}/{g.tasks.length}</span></div>
+  <div className="locationName"><h3>{g.location}</h3></div>
+  <div className="pointThemeTags" title={themes.join("、")}>
+  {visibleThemes.map(theme=><Badge key={theme} variant="secondary" className="pointThemeBadge">#{theme}</Badge>)}
+  {themes.length>visibleThemes.length&&<Badge variant="outline" className="pointThemeMore">+{themes.length-visibleThemes.length}</Badge>}
+  {!themes.length&&<span className="pointThemeEmpty">尚未关联创作主题</span>}
+  </div>
+  <div className="pointTaskSummary">
+  {unshotTasks.length>0&&<div className="pointTaskState pointTaskState-unshot"><span>待拍摄</span><div>{unshotTasks.map(task=><Badge key={task.id} variant="secondary" className="pointTaskBadge">{taskName(task)}</Badge>)}</div></div>}
+  {retakeTasks.length>0&&<div className="pointTaskState pointTaskState-retake"><span>待补拍</span><div>{retakeTasks.map(task=><Badge key={task.id} variant="destructive" className="pointTaskBadge">{taskName(task)}</Badge>)}</div></div>}
+  {g.tasks.length>0&&!unshotTasks.length&&!retakeTasks.length&&<div className="pointTaskComplete">✓ 全部拍摄任务已毕业</div>}
+  {!g.tasks.length&&<div className="pointTaskNone">尚未创建拍摄任务</div>}
+  </div>
+  <div className="pointCardProgress"><div><span>任务进度</span><strong>{completion}%</strong></div><span className="pointCardProgressTrack"><i style={{width:`${completion}%`}}/></span></div>
+  <div className="pointCardMeta"><span><CameraIcon aria-hidden="true"/>{g.stations.length} 个机位</span><span><ImagesIcon aria-hidden="true"/>{sampleCount} 张样片</span><span className={g.point.longitude&&g.point.latitude?"":"missing"}><MapPinIcon aria-hidden="true"/>{g.point.longitude&&g.point.latitude?"已定位":"待定位"}</span></div>
+  </button><div className="pointCardActions"><Tooltip><TooltipTrigger render={<Button variant="secondary" size="icon-sm"/>} aria-label={`编辑${g.location}`} onClick={()=>{setPointEditOnOpen(true);setExpanded(g.key)}}><PencilIcon/></TooltipTrigger><TooltipContent>编辑点位</TooltipContent></Tooltip><Tooltip><TooltipTrigger render={<Button variant="destructive" size="icon-sm"/>} aria-label={`删除${g.location}`} onClick={()=>removePointGroup(g)}><Trash2Icon/></TooltipTrigger><TooltipContent>删除点位</TooltipContent></Tooltip></div></article>
+})}</div>
 </div>
 </section>}
 
   {view==="library"&&activeGroup&&<PointDetailModal key={`${activeGroup.key}-${pointEditOnOpen?"edit":"view"}`} point={activeGroup} initialEditing={pointEditOnOpen} districts={availableDistricts} categories={themeCategories} onClose={()=>{setExpanded(null);setPointEditOnOpen(false)}} onSave={(patch,names,stations,taskWindows)=>savePointGroup(activeGroup,patch,names,stations,taskWindows)} onAddTask={()=>addTask(activeGroup)} onManageTask={async id=>{if(await openEditor(id))setExpanded(null)}} onRemoveTask={removeTask} onChangeStatus={changeStatus}/>}
 
-  {view==="gallery"&&<Gallery tasks={taskViews} points={points} categories={themeCategories} ensureAdmin={ensureAdmin} onEdit={async id=>{if(await ensureAdmin()){setEditing(id);setView("library")}}}/>}
+  {view==="gallery"&&<Gallery tasks={taskViews} points={points} categories={themeCategories} ensureAdmin={ensureAdmin} onRemoteSamplesChange={setCloudSamples} onEdit={async id=>{if(await ensureAdmin()){setEditing(id);setView("library")}}}/>}
 
   {view==="map"&&<section className="mapWorkspace">
 <div className="mapMain">
@@ -427,7 +437,7 @@ function PointDetailModal({point,initialEditing,districts,categories,onClose,onS
 </div></div>
 }
 
-function Gallery({tasks,points,categories,ensureAdmin,onEdit}:{tasks:Task[];points:PointRecord[];categories:string[];ensureAdmin:()=>Promise<boolean>;onEdit:(id:number)=>void}){
+function Gallery({tasks,points,categories,ensureAdmin,onRemoteSamplesChange,onEdit}:{tasks:Task[];points:PointRecord[];categories:string[];ensureAdmin:()=>Promise<boolean>;onRemoteSamplesChange:(samples:GallerySample[])=>void;onEdit:(id:number)=>void}){
   const [remote,setRemote]=useState<GallerySample[]>([]); const [loading,setLoading]=useState(true); const [error,setError]=useState("");
   const [query,setQuery]=useState(""); const [district,setDistrict]=useState("全部行政区"); const [theme,setTheme]=useState("全部主题"); const [category,setCategory]=useState("全部归类");
   const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState(""); const [uploadError,setUploadError]=useState("");
@@ -439,6 +449,7 @@ function Gallery({tasks,points,categories,ensureAdmin,onEdit}:{tasks:Task[];poin
   const [taskId,setTaskId]=useState(String(tasks[0]?.id||"")); const [stationName,setStationName]=useState(""); const [uploadDevice,setUploadDevice]=useState(""); const [uploadShootTime,setUploadShootTime]=useState(""); const [uploadLocation,setUploadLocation]=useState(""); const [note,setNote]=useState(""); const filesRef=useRef<HTMLInputElement>(null);
   const normalizeSample=(x:GallerySample):GallerySample=>({...x,themeCategory:x.themeCategory||inferThemeCategory(x.theme),url:x.url.startsWith("/")?`${sampleApi}${x.url.slice("/api/samples".length)}`:x.url});
   const load=async()=>{setLoading(true);setError("");try{const r=await fetch(sampleApi,{cache:"no-store"});if(!r.ok)throw new Error();const d=await r.json();setRemote((d.items||[]).map(normalizeSample))}catch{setError("云端样片暂时无法读取，请稍后重试。")}finally{setLoading(false)}};
+  useEffect(()=>{onRemoteSamplesChange(remote)},[remote,onRemoteSamplesChange]);
   useEffect(()=>{load();uploadJobs().then(async jobs=>{const recovered=jobs.map(job=>job.status==="uploading"?{...job,status:"failed" as const,error:"上次上传被中断，可从已完成进度继续"}:job);await Promise.all(recovered.map(saveUploadJob));setQueue(recovered)}).catch(()=>{})},[]);
   const local=useMemo(()=>tasks.flatMap(t=>{const station=t.stations?.find(item=>(t.stationIds||[]).includes(item.id))||t.stations?.[0];const point=points.find(item=>item.id===t.pointId);return (t.samples||[]).map(s=>({id:`local-${t.id}-${s.id}`,url:s.url,uploadedAt:"",taskId:String(t.id),district:t.district,location:t.location,theme:t.theme,themeCategory:point?.themeNames[0]||"",stationId:station?.id||"",stationName:station?.name||"未指定机位",stationDescription:station?.description||"",subjectDescription:"",note:t.note||"",originalName:s.name,local:true} as GallerySample))}),[tasks,points]);
   const all=[...remote,...local]; const districts=[...new Set(all.map(x=>x.district).filter(Boolean))]; const themes=[...new Set(all.map(x=>x.theme).filter(Boolean))];

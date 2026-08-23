@@ -437,3 +437,87 @@ body{
 @media(prefers-contrast:more){
   .locationCard,.themeCard,.sampleCard,.stats article,.workspace,.calendarPanel,.coverage,.galleryPanel,.themeManager,.mapWorkspace,[data-slot="button"],[data-slot="input"]{border-color:var(--ink)}
 }
+
+/* 点位卡片：先识别主题，再看未完成任务与执行条件。 */
+.spotList{align-items:stretch}
+.locationCard{height:100%;min-height:350px}
+.locationSummary{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:10px;
+  width:100%;
+  height:100%;
+  min-height:350px;
+  padding:14px;
+  text-align:left;
+}
+.pointCardHeader{display:flex;align-items:center;gap:6px;min-height:24px}
+.pointCardHeader .priorityBadge{
+  align-self:auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-right:0;
+  padding:4px 7px;
+  font-size:9px;
+  line-height:1;
+}
+.pointDistrict{
+  padding:4px 7px;
+  border:1px solid color-mix(in srgb,var(--soft-edge) 74%,transparent);
+  border-radius:999px;
+  color:var(--muted-foreground);
+  background:var(--surface);
+  box-shadow:var(--soft-inset-small);
+  font-size:9px;
+  line-height:1;
+}
+.pointCompletion{margin-left:auto;color:var(--muted-foreground);font-size:9px;transition:opacity .15s}
+.locationCard:hover .pointCompletion,.locationCard:focus-within .pointCompletion{opacity:0}
+.locationName{padding:0;min-width:0}
+.locationName h3{margin:0;font-size:16px;line-height:1.35;font-weight:800;letter-spacing:-.015em}
+.pointThemeTags{display:flex;flex-wrap:wrap;align-content:flex-start;gap:5px;min-height:24px}
+.pointThemeBadge,.pointThemeMore{
+  height:auto;
+  min-height:21px;
+  padding:3px 7px;
+  border-color:color-mix(in srgb,var(--accent) 30%,var(--soft-edge));
+  background:color-mix(in srgb,var(--accent) 15%,var(--surface));
+  color:color-mix(in srgb,var(--accent) 85%,var(--ink));
+  box-shadow:var(--soft-raised-small);
+  font-size:9px;
+  font-weight:750;
+}
+.pointThemeMore{background:var(--surface);color:var(--muted-foreground)}
+.pointThemeEmpty{color:var(--muted-foreground);font-size:9px;line-height:22px}
+.pointTaskSummary{display:grid;align-content:start;gap:8px;flex:1;min-height:68px}
+.pointTaskState{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:start;gap:6px}
+.pointTaskState>span{padding-top:4px;color:var(--muted-foreground);font-size:9px;font-weight:750;white-space:nowrap}
+.pointTaskState>div{display:flex;flex-wrap:wrap;gap:4px}
+.pointTaskBadge{
+  width:auto;
+  height:auto;
+  min-height:20px;
+  padding:3px 6px;
+  white-space:normal;
+  text-align:left;
+  line-height:1.25;
+  font-size:8px;
+}
+.pointTaskState-unshot .pointTaskBadge{border:1px solid color-mix(in srgb,#6e8da1 30%,var(--soft-edge));background:color-mix(in srgb,#6e8da1 12%,var(--surface));color:color-mix(in srgb,#6e8da1 80%,var(--ink))}
+.pointTaskState-retake .pointTaskBadge{border:1px solid color-mix(in srgb,var(--accent) 35%,var(--soft-edge));background:color-mix(in srgb,var(--accent) 13%,var(--surface));color:color-mix(in srgb,var(--accent) 85%,var(--ink))}
+.pointTaskComplete,.pointTaskNone{padding:9px 10px;border-radius:9px;background:var(--surface);box-shadow:var(--soft-inset-small);font-size:9px}
+.pointTaskComplete{color:var(--green)}
+.pointTaskNone{color:var(--muted-foreground)}
+.pointCardProgress{display:grid;gap:5px}
+.pointCardProgress>div{display:flex;justify-content:space-between;align-items:center;color:var(--muted-foreground);font-size:8px}
+.pointCardProgress strong{color:var(--ink);font-size:9px}
+.pointCardProgressTrack{display:block;height:6px;overflow:hidden;border-radius:999px;background:var(--surface);box-shadow:var(--soft-inset-small)}
+.pointCardProgressTrack i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--green),color-mix(in srgb,var(--green) 68%,#83c7a1));transition:width .25s ease-out}
+.pointCardMeta{display:flex;align-items:center;justify-content:space-between;gap:6px;padding-top:9px;border-top:1px solid color-mix(in srgb,var(--line) 72%,transparent);color:var(--muted-foreground);font-size:8px}
+.pointCardMeta span{display:flex;align-items:center;gap:3px;white-space:nowrap}
+.pointCardMeta svg{width:11px;height:11px;stroke-width:1.8}
+.pointCardMeta .missing{color:color-mix(in srgb,var(--accent) 78%,var(--muted-foreground))}
+@media(hover:none){.pointCompletion{opacity:0}}
+@media(max-width:780px){.locationCard,.locationSummary{min-height:320px}}
