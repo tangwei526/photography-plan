@@ -5,16 +5,18 @@ import * as XLSX from "xlsx";
 import sourceData from "./spots.json";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast as shadcnToast } from "@/components/ui/toast";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CameraIcon, DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, LogOutIcon, MapPinIcon, MoonIcon, PencilIcon, PlusIcon, SunIcon, Trash2Icon } from "lucide-react";
+import { CameraIcon, DownloadIcon, FileDownIcon, FileUpIcon, ImagesIcon, LocateFixedIcon, LogOutIcon, MapPinIcon, MoonIcon, PencilIcon, PlusIcon, RefreshCwIcon, SunriseIcon, SunsetIcon, SunIcon, Trash2Icon } from "lucide-react";
 
 type Status = "未拍摄" | "待补拍" | "已毕业";
 type Priority = "低" | "中" | "高";
@@ -40,6 +42,9 @@ type WeatherNow = { text:string; code:string; temperature:number; feelsLike:numb
 type WeatherLocation = { id?:string; name:string; adm2?:string; adm1?:string; country?:string; latitude:number; longitude:number };
 type RouteInfo = { distance:number; duration:number; geometry:[number,number][] };
 type AstronomyData = { date:string; sunrise:string; sunset:string; dawn:string; dusk:string; moonrise:string; moonset:string; moonPhase:number; moonIllumination:number; source?:string };
+type PhotoConditionEvent = { event:string; date:string; time:string; quality:number|null; qualityLabel:string; aod:number|null; aodLabel:string; model:string; run:string; source:string; estimated:boolean };
+type PhotoConditionDay = { date:string; label:string; aqi:{value:number;category:string;standard:string;source:string}|null; pm25:number|null; sunrise:PhotoConditionEvent; sunset:PhotoConditionEvent };
+type PhotoConditionsData = { city:string; latitude:number; longitude:number; days:PhotoConditionDay[]; updatedAt:string; sunsetbotAvailable:boolean; attributions:string[] };
 
 const districtCenters:Record<string,[number,number]> = {
   渝中区:[106.555,29.557], 江北区:[106.574,29.606], 南岸区:[106.620,29.522], 沙坪坝区:[106.455,29.555],
@@ -157,7 +162,7 @@ function CurrentWeatherCard(){
   const fallback:WeatherLocation={name:"重庆市",adm2:"重庆",latitude:29.563,longitude:106.5516};
   const [location,setLocation]=useState<WeatherLocation>(fallback);const [weather,setWeather]=useState<WeatherNow|null>(null);const [loading,setLoading]=useState(true);const [message,setMessage]=useState("");
   const [searchOpen,setSearchOpen]=useState(false);const [query,setQuery]=useState("");const [results,setResults]=useState<WeatherLocation[]>([]);const [searching,setSearching]=useState(false);
-  async function load(next:WeatherLocation){setLoading(true);setMessage("");try{const response=await fetch(`${weatherApi}?lat=${next.latitude}&lon=${next.longitude}`,{cache:"no-store"});const data=await response.json();if(!response.ok||!data.current)throw new Error(data.error||"实时天气暂不可用");setLocation(next);setWeather(data.current);localStorage.setItem("shancheng-weather-location",JSON.stringify(next))}catch(reason){setMessage(reason instanceof Error?reason.message:"实时天气暂不可用")}finally{setLoading(false)}}
+  async function load(next:WeatherLocation){setLocation(next);localStorage.setItem("shancheng-weather-location",JSON.stringify(next));window.dispatchEvent(new CustomEvent("shancheng-weather-location-change",{detail:next}));setLoading(true);setMessage("");try{const response=await fetch(`${weatherApi}?lat=${next.latitude}&lon=${next.longitude}`,{cache:"no-store"});const data=await response.json();if(!response.ok||!data.current)throw new Error(data.error||"实时天气暂不可用");setWeather(data.current)}catch(reason){setMessage(reason instanceof Error?reason.message:"实时天气暂不可用")}finally{setLoading(false)}}
   async function useCurrentLocation(){if(!navigator.geolocation){setMessage("当前浏览器不支持定位");return}setLoading(true);setMessage("");navigator.geolocation.getCurrentPosition(async position=>{const coordinates={latitude:position.coords.latitude,longitude:position.coords.longitude};let next:WeatherLocation={...coordinates,name:"当前位置"};try{const lookup=await fetch(`${weatherApi}?mode=search&query=${encodeURIComponent(`${coordinates.longitude},${coordinates.latitude}`)}`).then(response=>response.json());if(lookup.locations?.[0])next=lookup.locations[0]}catch{}await load(next)},()=>{setLoading(false);setMessage("无法读取当前位置，可搜索城市切换")},{enableHighAccuracy:false,timeout:8000,maximumAge:600000})}
   async function search(event:React.FormEvent){event.preventDefault();const keyword=query.trim();if(!keyword)return;setSearching(true);setMessage("");try{const response=await fetch(`${weatherApi}?mode=search&query=${encodeURIComponent(keyword)}`,{cache:"no-store"});const data=await response.json();if(!response.ok)throw new Error(data.error||"地点搜索失败");setResults(data.locations||[]);if(!data.locations?.length)setMessage("没有找到这个地点") }catch(reason){setMessage(reason instanceof Error?reason.message:"地点搜索失败")}finally{setSearching(false)}}
   useEffect(()=>{let saved:WeatherLocation|undefined;try{saved=JSON.parse(localStorage.getItem("shancheng-weather-location")||"")}catch{}if(saved?.latitude&&saved?.longitude)load(saved);else useCurrentLocation()},[]);
@@ -166,6 +171,32 @@ function CurrentWeatherCard(){
     <div className="currentWeatherActions"><button type="button" onClick={useCurrentLocation}>⌖ 当前位置</button><button type="button" onClick={()=>{setSearchOpen(value=>!value);setResults([])}}>切换地点</button></div>
     {searchOpen&&<form className="weatherSearch" onSubmit={search}><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="搜索城市或区县" aria-label="搜索天气地点"/><button disabled={searching||!query.trim()}>{searching?"搜索中":"搜索"}</button>{results.length>0&&<div className="weatherSearchResults">{results.map(item=><button type="button" key={`${item.id}-${item.latitude}`} onClick={()=>{load(item);setSearchOpen(false);setResults([]);setQuery("")}}><strong>{item.name}</strong><small>{[item.adm2,item.adm1].filter(Boolean).join(" · ")}</small></button>)}</div>}</form>}
     {message&&<em>{message}</em>}<a href="https://www.qweather.com/" target="_blank" rel="noreferrer">数据来源：和风天气</a>
+  </section>
+}
+
+function ConditionEventRow({label,item,icon}:{label:string;item:PhotoConditionEvent;icon:React.ReactNode}){
+  const variant=item.quality!==null&&item.quality>=.4?"default":item.quality!==null&&item.quality>=.05?"secondary":"outline";
+  return <article className="conditionEventRow">
+    <div className="conditionEventName"><span>{icon}</span><div><strong>{label}{item.time?` · ${item.time}`:""}</strong><small>{item.estimated?"参考估算":`${item.source} · ${item.model}`}</small></div></div>
+    <div className="conditionMetric"><small>鲜艳度</small><strong>{item.quality===null?"--":item.quality.toFixed(3)}</strong><Badge variant={variant}>{item.qualityLabel}</Badge></div>
+    <div className="conditionMetric"><small>AOD</small><strong>{item.aod===null?"--":item.aod.toFixed(3)}</strong><Badge variant="outline">{item.aodLabel}</Badge></div>
+  </article>
+}
+
+function PhotoConditionsBoard(){
+  const fallback:WeatherLocation={name:"重庆市",adm2:"重庆",latitude:29.563,longitude:106.5516};
+  const [location,setLocation]=useState<WeatherLocation>(fallback);const [data,setData]=useState<PhotoConditionsData|null>(null);const [loading,setLoading]=useState(true);const [error,setError]=useState("");const locationKey=useRef("");
+  async function load(next:WeatherLocation,force=false){const key=`${next.latitude.toFixed(3)}:${next.longitude.toFixed(3)}`;if(!force&&locationKey.current===key)return;locationKey.current=key;setLocation(next);setLoading(true);setError("");const city=(next.adm2||next.name||"重庆").replace(/[市区县]$/,"")||"重庆";try{const response=await fetch(`${weatherApi}?mode=photo-conditions&lat=${next.latitude}&lon=${next.longitude}&city=${encodeURIComponent(city)}`,{cache:force?"no-cache":"default"});const value=await response.json();if(!response.ok||!Array.isArray(value.days))throw new Error(value.error||"拍摄大气数据暂不可用");setData(value)}catch(reason){setError(reason instanceof Error?reason.message:"拍摄大气数据暂不可用")}finally{setLoading(false)}}
+  useEffect(()=>{let saved:WeatherLocation|undefined;try{saved=JSON.parse(localStorage.getItem("shancheng-weather-location")||"")}catch{}load(saved?.latitude&&saved?.longitude?saved:fallback);const changed=(event:Event)=>{const next=(event as CustomEvent<WeatherLocation>).detail;if(next?.latitude&&next?.longitude)load(next)};window.addEventListener("shancheng-weather-location-change",changed);return()=>window.removeEventListener("shancheng-weather-location-change",changed)},[]);
+  const locationLabel=location.name+(location.adm2&&location.adm2!==location.name?` · ${location.adm2}`:"");
+  return <section className="photoConditionsBoard" aria-label="当前位置今明两天拍摄大气条件">
+    <div className="photoConditionsHead"><div><p className="eyebrow">ATMOSPHERE FOR PHOTOGRAPHY</p><h2><LocateFixedIcon/>{locationLabel} · 今明拍摄大气</h2><p>气溶胶通透度、火烧云鲜艳度与空气质量合并展示，定位会跟随首页天气地点。</p></div><Button variant="outline" size="sm" disabled={loading} onClick={()=>load(location,true)}><RefreshCwIcon data-icon="inline-start"/>{loading?"更新中":"刷新数据"}</Button></div>
+    {loading&&!data?<div className="conditionDayGrid">{[0,1].map(index=><Card key={index} size="sm" className="conditionDayCard"><CardHeader><Skeleton className="h-5 w-24"/><Skeleton className="h-4 w-40"/></CardHeader><CardContent className="conditionSkeleton"><Skeleton/><Skeleton/></CardContent></Card>)}</div>:data?<div className="conditionDayGrid">{data.days.map(day=><Card key={day.date} size="sm" className="conditionDayCard">
+      <CardHeader><CardTitle>{day.label}<span>{new Date(`${day.date}T12:00:00+08:00`).toLocaleDateString("zh-CN",{month:"long",day:"numeric",weekday:"short"})}</span></CardTitle><CardDescription>{day.pm25===null?"大气模型已更新":`PM2.5 约 ${day.pm25.toFixed(1)} μg/m³`}</CardDescription><CardAction><Badge variant={day.aqi&&day.aqi.value>150?"destructive":day.aqi&&day.aqi.value>100?"outline":"secondary"}>AQI {day.aqi?.value??"--"} · {day.aqi?.category||"暂缺"}</Badge></CardAction></CardHeader>
+      <CardContent className="conditionEventList"><ConditionEventRow label="朝霞" item={day.sunrise} icon={<SunriseIcon/>}/><ConditionEventRow label="晚霞" item={day.sunset} icon={<SunsetIcon/>}/></CardContent>
+      <CardFooter><span>{day.aqi?.standard||"AQI"} · {day.aqi?.source||"暂无空气质量数据"}</span>{day.sunrise.estimated||day.sunset.estimated?<Badge variant="outline">SunsetBot 不可用时采用参考估算</Badge>:<Badge variant="secondary">SunsetBot GFS</Badge>}</CardFooter>
+    </Card>)}</div>:<Card size="sm" className="conditionError"><CardHeader><CardTitle>拍摄大气数据暂未读取</CardTitle><CardDescription>{error||"请稍后重试"}</CardDescription><CardAction><Button variant="outline" size="sm" onClick={()=>load(location,true)}>重试</Button></CardAction></CardHeader></Card>}
+    {data&&<div className="conditionSources"><span>{error||`更新于 ${new Date(data.updatedAt).toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit"})}`}</span><span>数据：<a href="https://sunsetbot.top/" target="_blank" rel="noreferrer">SunsetBot</a> · <a href="https://www.qweather.com/" target="_blank" rel="noreferrer">和风天气</a> · <a href="https://open-meteo.com/en/docs/air-quality-api" target="_blank" rel="noreferrer">Open-Meteo / CAMS</a></span></div>}
   </section>
 }
 
@@ -288,6 +319,7 @@ export default function Home(){
     </DialogContent>
   </Dialog>
   <div className={view==="gallery"?"shell galleryShell":"shell"}>
+{view==="library"&&<PhotoConditionsBoard/>}
 {view==="library"&&<div className="homeOverview"><AstronomyHero/><OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={points.filter(point=>point.longitude&&point.latitude).length}/></div>}
 {view!=="gallery"&&<><section className="intro">
 <div>

@@ -521,3 +521,33 @@ body{
 .pointCardMeta .missing{color:color-mix(in srgb,var(--accent) 78%,var(--muted-foreground))}
 @media(hover:none){.pointCompletion{opacity:0}}
 @media(max-width:780px){.locationCard,.locationSummary{min-height:320px}}
+
+/* 点位库顶部：今明两天拍摄大气条件 */
+.photoConditionsBoard{margin-bottom:14px;padding:20px;border:1px solid color-mix(in srgb,var(--line) 72%,transparent);border-radius:20px;background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 92%,#ffc6a0),color-mix(in srgb,var(--surface-soft) 94%,#b8d8ec));box-shadow:var(--apple-shadow)}
+.photoConditionsHead{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:16px}
+.photoConditionsHead h2{display:flex;align-items:center;gap:8px;margin:5px 0 4px;font-size:20px;line-height:1.2;letter-spacing:-.02em}
+.photoConditionsHead h2 svg{width:19px;height:19px;color:var(--accent)}
+.photoConditionsHead p:last-child{max-width:760px;margin:0;color:var(--muted-foreground);font-size:10px;line-height:1.6}
+.conditionDayGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.conditionDayCard{border-color:color-mix(in srgb,var(--line) 72%,transparent);background:color-mix(in srgb,var(--surface) 86%,transparent);box-shadow:inset 0 1px #ffffff2e,0 8px 28px #1720190b}
+.conditionDayCard [data-slot="card-title"]{display:flex;align-items:baseline;gap:8px;font-size:16px;font-weight:800}
+.conditionDayCard [data-slot="card-title"] span{color:var(--muted-foreground);font-size:10px;font-weight:500}
+.conditionDayCard [data-slot="card-description"]{font-size:9px}
+.conditionDayCard [data-slot="card-footer"]{justify-content:space-between;gap:10px;color:var(--muted-foreground);font-size:8px}
+.conditionEventList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.conditionEventRow{display:grid;grid-template-columns:minmax(92px,1fr) auto auto;align-items:center;gap:10px;padding:11px;border:1px solid color-mix(in srgb,var(--line) 72%,transparent);border-radius:12px;background:color-mix(in srgb,var(--surface-soft) 88%,transparent);box-shadow:inset 0 1px #ffffff35}
+.conditionEventName{display:flex;align-items:center;gap:8px;min-width:0}
+.conditionEventName>span{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border-radius:10px;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent)}
+.conditionEventName svg{width:16px;height:16px}
+.conditionEventName strong,.conditionEventName small{display:block;white-space:nowrap}
+.conditionEventName strong{font-size:10px}.conditionEventName small{margin-top:2px;color:var(--muted-foreground);font-size:7px}
+.conditionMetric{display:grid;justify-items:end;gap:2px;min-width:64px}
+.conditionMetric>small{color:var(--muted-foreground);font-size:7px;text-transform:uppercase;letter-spacing:.08em}
+.conditionMetric>strong{font-size:15px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.conditionMetric [data-slot="badge"]{height:17px;padding-inline:6px;font-size:7px}
+.conditionSkeleton{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.conditionSkeleton>[data-slot="skeleton"]{height:88px}
+.conditionError{background:var(--surface)}
+.conditionSources{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:10px;color:var(--muted-foreground);font-size:8px}
+.conditionSources a{color:inherit;text-underline-offset:2px}
+@media(max-width:1120px){.conditionEventList{grid-template-columns:1fr}.conditionEventRow{grid-template-columns:minmax(120px,1fr) auto auto}}
+@media(max-width:760px){.photoConditionsBoard{padding:15px}.photoConditionsHead{display:block}.photoConditionsHead [data-slot="button"]{margin-top:12px}.conditionDayGrid{grid-template-columns:1fr}.conditionEventRow{grid-template-columns:minmax(100px,1fr) auto auto}.conditionDayCard [data-slot="card-footer"],.conditionSources{align-items:flex-start;flex-direction:column}.conditionSources{gap:4px}}
