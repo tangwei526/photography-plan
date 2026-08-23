@@ -20,3 +20,11 @@ test("ships a real Excel import template with the normalized columns", async () 
     assert.match(source, new RegExp(heading));
   }
 });
+
+test("uses an in-app admin dialog before editing gallery samples", async () => {
+  const source = await readFile(new URL("../app/HomeClient.tsx", import.meta.url), "utf8");
+  assert.match(source, /<DialogTitle>验证管理权限<\/DialogTitle>/);
+  assert.match(source, /verifyAdminKey/);
+  assert.match(source, /ensureAdmin=\{ensureAdmin\}/);
+  assert.doesNotMatch(source, /prompt\("请输入管理密钥/);
+});

@@ -7,6 +7,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -64,21 +65,6 @@ const sampleApi=typeof window!=="undefined"&&window.location.hostname.endsWith("
 const assetBase=import.meta.env.BASE_URL||"/";
 let amapPromise:Promise<any>|null=null;
 async function loadAMap(){if((window as any).AMap)return (window as any).AMap;if(amapPromise)return amapPromise;amapPromise=(async()=>{const response=await fetch("/api/amap-config",{cache:"no-store"});const config=await response.json();if(!response.ok||!config.key)throw new Error(config.error||"高德地图未配置");(window as any)._AMapSecurityConfig={serviceHost:`${window.location.origin}/api/amap/_AMapService`};await new Promise<void>((resolve,reject)=>{const script=document.createElement("script");script.src=`https://webapi.amap.com/maps?v=2.0&key=${encodeURIComponent(config.key)}&plugin=AMap.Scale,AMap.ToolBar`;script.onload=()=>resolve();script.onerror=()=>reject(new Error("高德地图加载失败"));document.head.appendChild(script)});return (window as any).AMap})();return amapPromise}
-async function ensureAdmin(){
-  try{
-    const current=await fetch("/api/admin",{cache:"no-store"});
-    const status=await current.json().catch(()=>({}));
-    if(current.ok&&status.valid===true){localStorage.removeItem("sample-admin-key");return true}
-    localStorage.removeItem("sample-admin-key");
-    const key=prompt("请输入管理密钥。验证成功后 30 天内无需再次输入。")||"";
-    if(!key)return false;
-    const response=await fetch("/api/admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key})});
-    const verified=await response.json().catch(()=>({}));
-    if(response.ok&&verified.valid===true)return true;
-    alert("管理密钥不正确");
-  }catch{alert("暂时无法验证管理权限，请稍后重试")}
-  return false;
-}
 const inferTimeWindow=(value:string)=>/日出蓝调|晨间蓝调/.test(value)?"日出蓝调":/日落蓝调|晚间蓝调/.test(value)?"日落蓝调":/日出|朝霞/.test(value)?"日出":/日落|晚霞/.test(value)?"日落":/夜景|夜拍|夜/.test(value)?"夜景":"自定义";
 const normalizeTask=(t:Task):Task=>({...t,themeCategory:t.themeCategory==="地铁"?"轨道交通":t.themeCategory||inferThemeCategory(t.theme),timeWindow:t.timeWindow||inferTimeWindow(t.theme),stations:t.stations||[],stationIds:t.stationIds||t.stations?.map(station=>station.id)||[],samples:t.samples||[],graduationCriteria:t.graduationCriteria||""});
 const normalizeThemeName=(value:string)=>String(value||"").trim().replace(/^地铁$/,"轨道交通").replace(/^大桥$/,"桥梁").replace(/^立交桥$/,"立交").replace(/^太阳月亮同框$/,"日月对齐");
@@ -195,8 +181,22 @@ export default function Home(){
   const [weather,setWeather]=useState<WeatherDay[]>([]); const [weatherLoading,setWeatherLoading]=useState(false); const [weatherError,setWeatherError]=useState(""); const [month,setMonth]=useState(currentMonth);
   const [calendarEvents,setCalendarEvents]=useState<CalendarEvent[]>([]);
   const [themeRecords,setThemeRecords]=useState<ThemeRecord[]>(()=>defaultThemeCategories.map((name,index)=>({id:`fallback-${index}`,name})));
+  const [adminDialogOpen,setAdminDialogOpen]=useState(false); const [adminKey,setAdminKey]=useState(""); const [adminError,setAdminError]=useState(""); const [adminChecking,setAdminChecking]=useState(false);
+  const adminResolver=useRef<((valid:boolean)=>void)|null>(null); const adminPromise=useRef<Promise<boolean>|null>(null);
   const themeCategories=themeRecords.map(record=>record.name);
   const inputRef=useRef<HTMLInputElement>(null);
+  function finishAdminCheck(valid:boolean){adminResolver.current?.(valid);adminResolver.current=null;adminPromise.current=null;setAdminDialogOpen(false);setAdminChecking(false);if(valid)setAdminKey("")}
+  async function ensureAdmin(){
+    try{const current=await fetch("/api/admin",{cache:"no-store"});const status=await current.json().catch(()=>({}));if(current.ok&&status.valid===true)return true}catch{}
+    if(adminPromise.current)return adminPromise.current;
+    setAdminError("");setAdminKey("");setAdminDialogOpen(true);
+    adminPromise.current=new Promise<boolean>(resolve=>{adminResolver.current=resolve});
+    return adminPromise.current;
+  }
+  async function verifyAdminKey(event:React.FormEvent){
+    event.preventDefault();if(!adminKey.trim()||adminChecking)return;setAdminChecking(true);setAdminError("");
+    try{const response=await fetch("/api/admin",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:adminKey})});const result=await response.json().catch(()=>({}));if(!response.ok||result.valid!==true)throw new Error(result.error||"管理密钥不正确");finishAdminCheck(true)}catch(reason){setAdminChecking(false);setAdminError(reason instanceof Error?reason.message:"验证失败，请重试")}
+  }
   useEffect(()=>{try{const savedWorkspace=localStorage.getItem("shancheng-photo-workspace-v3");if(savedWorkspace){const parsed=JSON.parse(savedWorkspace) as {points:PointRecord[];tasks:Task[]};if(Array.isArray(parsed.points)&&Array.isArray(parsed.tasks)){setPoints(parsed.points.map(point=>({...point,themeNames:point.themeNames||[],stations:point.stations||[]})));setTasks(parsed.tasks.map(normalizeTask))}}else{const legacy=localStorage.getItem("shancheng-photo-tasks-v2")||localStorage.getItem("shancheng-photo-tasks-v1");if(legacy){const migrated=migrateWorkspace(JSON.parse(legacy) as Task[]);setPoints(migrated.points);setTasks(migrated.tasks)}}}catch{}setThemeMode(document.documentElement.dataset.theme==="dark"?"dark":"light");setHydrated(true)},[]);
   useEffect(()=>{if(hydrated)localStorage.setItem("shancheng-photo-workspace-v3",JSON.stringify({points,tasks}))},[points,tasks,hydrated]);
   useEffect(()=>{(async()=>{try{const response=await fetch("/api/planner",{cache:"no-store"});if(!response.ok)throw new Error();const data=await response.json();setCalendarEvents(Array.isArray(data.events)?data.events:[]);if(Array.isArray(data.themes)&&data.themes.length)setThemeRecords(data.themes)}catch{}})()},[]);
@@ -257,6 +257,27 @@ export default function Home(){
 <input ref={inputRef} hidden type="file" accept=".xlsx,.xls" onChange={e=>e.target.files?.[0]&&importExcel(e.target.files[0])}/>
 </div>
   </header>
+  <Dialog open={adminDialogOpen} onOpenChange={open=>{if(!open&&!adminChecking)finishAdminCheck(false)}}>
+    <DialogContent className="sm:max-w-md" showCloseButton={!adminChecking}>
+      <form onSubmit={verifyAdminKey}>
+        <DialogHeader>
+          <DialogTitle>验证管理权限</DialogTitle>
+          <DialogDescription>编辑、上传或删除样片前需要验证管理密钥。验证成功后 30 天内无需再次输入。</DialogDescription>
+        </DialogHeader>
+        <FieldGroup className="py-4">
+          <Field data-invalid={Boolean(adminError)||undefined}>
+            <FieldLabel htmlFor="admin-key">管理密钥</FieldLabel>
+            <Input id="admin-key" type="password" autoComplete="current-password" autoFocus value={adminKey} onChange={event=>setAdminKey(event.target.value)} aria-invalid={Boolean(adminError)} disabled={adminChecking}/>
+            {adminError&&<FieldError>{adminError}</FieldError>}
+          </Field>
+        </FieldGroup>
+        <DialogFooter>
+          <Button type="button" variant="outline" disabled={adminChecking} onClick={()=>finishAdminCheck(false)}>取消</Button>
+          <Button type="submit" disabled={adminChecking||!adminKey.trim()}>{adminChecking&&<Spinner data-icon="inline-start"/>}{adminChecking?"正在验证":"验证并继续"}</Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
   <div className={view==="gallery"?"shell galleryShell":"shell"}>
 {view==="library"&&<div className="homeOverview"><AstronomyHero/><OverviewStats pointCount={groups.length} districtCount={districts.length} counts={counts} scheduleCount={calendarEvents.length} coordinateCount={points.filter(point=>point.longitude&&point.latitude).length}/></div>}
 {view!=="gallery"&&<><section className="intro">
@@ -332,7 +353,7 @@ export default function Home(){
 
   {view==="library"&&activeGroup&&<PointDetailModal key={`${activeGroup.key}-${pointEditOnOpen?"edit":"view"}`} point={activeGroup} initialEditing={pointEditOnOpen} districts={availableDistricts} categories={themeCategories} onClose={()=>{setExpanded(null);setPointEditOnOpen(false)}} onSave={(patch,names,stations,taskWindows)=>savePointGroup(activeGroup,patch,names,stations,taskWindows)} onAddTask={()=>addTask(activeGroup)} onManageTask={async id=>{if(await openEditor(id))setExpanded(null)}} onRemoveTask={removeTask} onChangeStatus={changeStatus}/>}
 
-  {view==="gallery"&&<Gallery tasks={taskViews} points={points} categories={themeCategories} onEdit={async id=>{if(await ensureAdmin()){setEditing(id);setView("library")}}}/>}
+  {view==="gallery"&&<Gallery tasks={taskViews} points={points} categories={themeCategories} ensureAdmin={ensureAdmin} onEdit={async id=>{if(await ensureAdmin()){setEditing(id);setView("library")}}}/>}
 
   {view==="map"&&<section className="mapWorkspace">
 <div className="mapMain">
@@ -406,7 +427,7 @@ function PointDetailModal({point,initialEditing,districts,categories,onClose,onS
 </div></div>
 }
 
-function Gallery({tasks,points,categories,onEdit}:{tasks:Task[];points:PointRecord[];categories:string[];onEdit:(id:number)=>void}){
+function Gallery({tasks,points,categories,ensureAdmin,onEdit}:{tasks:Task[];points:PointRecord[];categories:string[];ensureAdmin:()=>Promise<boolean>;onEdit:(id:number)=>void}){
   const [remote,setRemote]=useState<GallerySample[]>([]); const [loading,setLoading]=useState(true); const [error,setError]=useState("");
   const [query,setQuery]=useState(""); const [district,setDistrict]=useState("全部行政区"); const [theme,setTheme]=useState("全部主题"); const [category,setCategory]=useState("全部归类");
   const [active,setActive]=useState<GallerySample|null>(null); const [uploadOpen,setUploadOpen]=useState(false); const [uploading,setUploading]=useState(false); const [progress,setProgress]=useState(""); const [uploadError,setUploadError]=useState("");
@@ -491,7 +512,7 @@ function Gallery({tasks,points,categories,onEdit}:{tasks:Task[];points:PointReco
   async function reupload(item:GallerySample,file:File|undefined){if(!file||item.local||!(await ensureAdmin()))return;if(!supportedUploadTypes.has(file.type)){alert("请先转换为 JPG、PNG、WebP、GIF 或 AVIF");return}setUploading(true);setProgress(file.size>uploadLimitBytes?"正在压缩替换图片…":"正在替换图片…");let prepared:File;try{prepared=await compressForUpload(file)}catch(reason){alert(reason instanceof Error?reason.message:"图片压缩失败");setUploading(false);setProgress("");return}const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}&name=${encodeURIComponent(file.name)}`,{method:"PUT",headers:{"content-type":prepared.type},body:prepared});const data=await r.json().catch(()=>({}));setUploading(false);setProgress("");if(!r.ok){alert(data.error||"重新上传失败");return}setActive(null);setBroken(items=>{const next=new Set(items);next.delete(item.id);return next});await load()}
   async function remove(item:GallerySample){if(item.local){notify("本地样片不能在画廊中删除","error");return}if(!confirm("删除这张云端样片？删除后不可恢复。")||!(await ensureAdmin()))return;setDeleting(items=>new Set(items).add(item.id));try{const r=await fetch(`${sampleApi}?id=${encodeURIComponent(item.id)}`,{method:"DELETE"});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||"删除失败，请重试");setRemote(items=>items.filter(sample=>sample.id!==item.id));setBroken(items=>{const next=new Set(items);next.delete(item.id);return next});setActive(current=>current?.id===item.id?null:current);notify("样片已删除","success")}catch(reason){notify(reason instanceof Error?reason.message:"删除失败，请重试","error")}finally{setDeleting(items=>{const next=new Set(items);next.delete(item.id);return next})}}
   async function startEdit(item:GallerySample){if(item.local){notify("本地样片上传后才能编辑","error");return}if(!(await ensureAdmin()))return;setActive(item);setDraft({originalName:item.originalName||"",location:item.location||"",themeCategory:item.themeCategory||inferThemeCategory(item.theme),device:item.device||"",shootTime:item.shootTime||"",stationId:item.stationId||"",stationName:item.stationName||"",stationDescription:item.stationDescription||"",subjectDescription:item.subjectDescription||"",note:item.note||""});setEditError("");setEditingMeta(true)}
-  async function saveEdit(){if(!active||active.local)return;if(!(await ensureAdmin())){notify("保存失败，请重试","error");return}setSavingMeta(true);setEditError("");try{const r=await fetch(sampleApi,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:active.id,...draft})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error();const updated={...active,...data.item,url:active.url};setRemote(items=>items.map(item=>item.id===active.id?updated:item));setEditingMeta(false);setActive(null);notify("修改成功","success")}catch{setEditError("保存失败，请重试");notify("保存失败，请重试","error")}finally{setSavingMeta(false)}}
+  async function saveEdit(){if(!active||active.local)return;if(!(await ensureAdmin()))return;setSavingMeta(true);setEditError("");try{const r=await fetch(sampleApi,{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:active.id,...draft})});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||`保存失败（${r.status}）`);const updated={...active,...data.item,url:active.url};setRemote(items=>items.map(item=>item.id===active.id?updated:item));setEditingMeta(false);setActive(null);notify("修改成功","success")}catch(reason){const message=reason instanceof Error?reason.message:"保存失败，请重试";setEditError(message);notify(message,"error")}finally{setSavingMeta(false)}}
   return <section className="galleryPanel">
 <div className="galleryToolbar">
 <div>
