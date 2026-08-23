@@ -13,8 +13,14 @@ const cleanText = (value: unknown, max = 500) => String(value || "").trim().slic
 const displayableImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
 const extensionFor = (type: string) => ({ "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "image/gif":"gif", "image/avif":"avif" }[type] || "jpg");
 const allowedOrigin = "https://tangwei526.github.io";
-const cors = (request: Request) => ({ "access-control-allow-origin": request.headers.get("origin") === allowedOrigin ? allowedOrigin : "", "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS", "access-control-allow-headers": "content-type,x-admin-key", "vary": "origin" });
+const cors = (request: Request) => ({ "access-control-allow-origin": request.headers.get("origin") === allowedOrigin ? allowedOrigin : "", "access-control-allow-methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS", "access-control-allow-headers": "content-type,x-admin-key", "access-control-expose-headers": "etag", "vary": "origin" });
 const jsonHeaders = (request: Request) => ({ ...cors(request), "cache-control": "no-store" });
+const etagMatches = (value: string | null, etag: string) => Boolean(value?.split(",").some(item => item.trim().replace(/^W\//, "") === etag));
+const inventoryEtag = async (objects: R2Object[]) => {
+  const signature = objects.map(object => `${object.key}:${object.uploaded.getTime()}:${object.size}:${object.httpEtag}`).join("|");
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(signature));
+  return `"${Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, "0")).join("")}"`;
+};
 const sampleItem = (object: R2Object, id = object.key.slice("samples/".length)) => ({
   id, url: `/api/samples?id=${encodeURIComponent(id)}`, uploadedAt: object.uploaded.toISOString(), size: object.size, ...(object.customMetadata || {}),
 });
@@ -47,8 +53,9 @@ export async function GET(request: Request) {
     const headers = new Headers();
     object.writeHttpMetadata(headers);
     headers.set("etag", object.httpEtag);
-    headers.set("cache-control", "private, max-age=31536000, immutable");
+    headers.set("cache-control", "public, max-age=31536000, s-maxage=31536000, immutable");
     Object.entries(cors(request)).forEach(([key,value]) => value && headers.set(key,value));
+    if (etagMatches(request.headers.get("if-none-match"), object.httpEtag)) return new Response(null, { status: 304, headers });
     return new Response(object.body, { headers });
   }
 
@@ -64,7 +71,10 @@ export async function GET(request: Request) {
     const id = object.key.slice("samples/".length);
     return sampleItem(object, id);
   });
-  return Response.json({ items }, { headers: jsonHeaders(request) });
+  const etag = await inventoryEtag(objects);
+  const headers = { ...cors(request), etag, "cache-control": "public, max-age=60, stale-while-revalidate=86400" };
+  if (etagMatches(request.headers.get("if-none-match"), etag)) return new Response(null, { status: 304, headers });
+  return Response.json({ items }, { headers });
 }
 
 export async function POST(request: Request) {
